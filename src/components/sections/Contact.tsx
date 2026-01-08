@@ -18,9 +18,9 @@ const socials = [
     icon: Linkedin,
   },
   {
-    label: 'Instagram',
-    href: 'https://www.instagram.com/s.r.i.r.a.m/',
-    icon: Instagram,
+    label: 'Github',
+    href: 'https://www.github.com/sriram-ravichandran',
+    icon: Github,
   },
 ];
 
@@ -128,10 +128,10 @@ const Contact = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 w-full max-w-2xl">
                   
                   {/* Left: Contact Info */}
-                  <div className="flex flex-col items-center md:items-start gap-6">
+                  <div className="flex flex-col items-start md:items-start gap-6">
                     {contactDetails.map((item) => (
-                      <div key={item.label} className="flex items-center gap-4 text-muted-foreground">
-                        <div className="p-2 rounded-full bg-secondary/50 border border-border dark:bg-white/5 dark:border-white/5">
+                      <div key={item.label} className="flex items-center gap-4 text-muted-foreground w-full justify-start">
+                        <div className="p-2 rounded-full bg-secondary/50 border border-border dark:bg-white/5 dark:border-white/5 flex-shrink-0">
                           <item.icon className="w-4 h-4" />
                         </div>
                         <div className="text-left">
@@ -143,7 +143,7 @@ const Contact = () => {
                   </div>
 
                   {/* Right: Social Icons */}
-                  <div className="flex flex-col items-center md:items-end gap-4">
+                  <div className="flex flex-col items-start md:items-end gap-4">
                     <p className="text-xs uppercase tracking-wider text-muted-foreground opacity-50 mb-2">Socials</p>
                     <div className="flex gap-4">
                       {socials.map((social) => (
