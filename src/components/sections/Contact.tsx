@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 const socials = [
   {
     label: 'Email',
-    href: 'mailto:sriramravichandran002@gmail.com',
+    href: 'mailto:sriramravichandran02@gmail.com',
     icon: Mail,
   },
   {
@@ -18,8 +18,8 @@ const socials = [
     icon: Linkedin,
   },
   {
-    label: 'GitHub',
-    href: 'https://github.com',
+    label: 'Instagram',
+    href: 'https://www.instagram.com/s.r.i.r.a.m/',
     icon: Instagram,
   },
 ];

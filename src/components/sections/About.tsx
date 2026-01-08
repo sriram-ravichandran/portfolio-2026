@@ -276,10 +276,15 @@ const About = () => {
             viewport={{ once: true }}
           >
             <MagneticReveal>
-              <button className="group relative px-8 py-4 bg-foreground text-background rounded-full font-semibold flex items-center gap-3 hover:bg-foreground/90 transition-all shadow-lg hover:shadow-xl">
+              <a 
+                href="https://drive.google.com/file/d/183Lp_e2Jk8mGbcJFjZW5YBUiszMMx3XR/view?usp=drive_link"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative px-8 py-4 bg-foreground text-background rounded-full font-semibold flex items-center gap-3 hover:bg-foreground/90 transition-all shadow-lg hover:shadow-xl"
+              >
                 Download Resume
                 <Download className="w-4 h-4 transition-transform group-hover:translate-y-1" />
-              </button>
+              </a>
             </MagneticReveal>
           </motion.div>
         </div>
