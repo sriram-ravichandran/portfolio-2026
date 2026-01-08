@@ -1,0 +1,229 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    --primary: 0 0% 0%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 0 0% 0%;
+
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+
+    --accent: 240 5% 96%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 0 0% 0%;
+
+    --radius: 0.5rem;
+
+    /* Custom glass variables */
+    --glass-bg: 0 0% 0% / 0.03;
+    --glass-border: 0 0% 0% / 0.08;
+    --glass-blur: 40px;
+    
+    /* Ambient glow */
+    --glow-primary: 0 0% 0% / 0.1;
+    --glow-secondary: 0 0% 50% / 0.05;
+  }
+
+  .dark {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+
+    --card: 0 0% 0%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 240 4% 10%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 240 4% 10%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 240 4% 10%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 0 0% 100%;
+
+    /* Custom glass variables */
+    --glass-bg: 0 0% 100% / 0.03;
+    --glass-border: 0 0% 100% / 0.08;
+    
+    /* Ambient glow */
+    --glow-primary: 0 0% 100% / 0.08;
+    --glow-secondary: 0 0% 50% / 0.05;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply text-foreground antialiased;
+    background-color: hsl(var(--background));
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: 'ss01', 'ss02', 'cv01';
+    margin: 0;
+    height: 100%;
+    overflow-x: hidden;
+  }
+
+  .dark body {
+    background-color: #0a0a0a;
+  }
+
+  ::selection {
+    @apply bg-foreground text-background;
+  }
+}
+
+@layer components {
+  /* Glass morphism card */
+  .glass-card {
+    @apply relative overflow-hidden;
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 0.5px solid hsl(var(--glass-border));
+  }
+
+  /* Editorial typography */
+  .headline-xl {
+    @apply text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold tracking-tighter leading-none;
+  }
+
+  .headline-lg {
+    @apply text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter leading-none;
+  }
+
+  .headline-md {
+    @apply text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight leading-tight;
+  }
+
+  .body-lg {
+    @apply text-lg sm:text-xl font-light leading-relaxed tracking-wide;
+  }
+
+  .body-md {
+    @apply text-base font-light leading-relaxed;
+  }
+
+  .label {
+    @apply text-xs uppercase tracking-[0.2em] font-medium text-muted-foreground;
+  }
+
+  /* Magnetic button base */
+  .magnetic-element {
+    @apply transition-transform duration-300 ease-out;
+  }
+
+  /* Skill pill with glow */
+  .skill-pill {
+    @apply px-4 py-2 rounded-full glass-card transition-all duration-300;
+  }
+
+  .skill-pill:hover {
+    box-shadow: 0 0 30px hsl(var(--glow-primary)), 0 0 60px hsl(var(--glow-secondary));
+  }
+
+  /* Timeline styles */
+  .timeline-line {
+    @apply absolute left-0 top-0 bottom-0 w-px
+           bg-gray-400 dark:bg-gray-600;
+  }
+
+  .timeline-dot {
+    @apply absolute left-0 w-2 h-2 -translate-x-1/2 rounded-full bg-foreground;
+  }
+
+  /* Counter digit */
+  .counter-digit {
+    @apply text-5xl sm:text-6xl md:text-7xl font-bold tracking-tighter tabular-nums;
+  }
+
+  /* Project card */
+  .project-card {
+    @apply relative overflow-hidden rounded-2xl glass-card;
+  }
+
+  /* Smooth scroll container */
+  .smooth-scroll {
+    @apply overflow-hidden;
+  }
+}
+
+@layer utilities {
+  /* Text gradient */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-foreground to-muted-foreground;
+  }
+
+  /* Ambient follow light */
+  .ambient-light {
+    pointer-events: none;
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, hsl(var(--glow-primary)) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    transition: opacity 0.3s ease;
+    z-index: 1;
+    filter: blur(80px);
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Clip path for theme transition */
+  .clip-circle {
+    clip-path: circle(0% at var(--x, 50%) var(--y, 50%));
+  }
+
+  .clip-circle-full {
+    clip-path: circle(150% at var(--x, 50%) var(--y, 50%));
+  }
+}
