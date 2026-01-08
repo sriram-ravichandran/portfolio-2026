@@ -1,4 +1,3 @@
 User-agent: *
 Allow: /
-
 Sitemap: https://www.google.com/search?q=https://sriramravichandran.in/sitemap.xml
