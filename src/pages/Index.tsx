@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import Hero from '@/components/sections/Hero';
 import About from '@/components/sections/About';
 import Projects from '@/components/sections/Projects';
+import NeuralDrift from '@/components/sections/NeuralDrift';
 import Contact from '@/components/sections/Contact';
 
 const Index = () => {
@@ -74,6 +75,7 @@ const Index = () => {
         <Hero />
         <About />
         <Projects />
+        <NeuralDrift />
         <Contact />
       </main>
     </div>
