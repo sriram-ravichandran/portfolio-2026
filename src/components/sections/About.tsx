@@ -19,7 +19,7 @@ const education = [
     title: 'M.S. Computer Science',
     subtitle: 'Illinois Institute of Technology',
     date: '2024 - 2026',
-    description: 'GPA: 3.44',
+    description: 'GPA: 3.50',
   },
   {
     title: 'B.E. Computer Science',
@@ -61,10 +61,10 @@ const experience = [
 ];
 
 const skills = [
-  'Python', 'C++', 'Java', 'JavaScript', 'TypeScript', 
-  'React', 'Node.js', 'Jersey', 'Docker', 'Kubernetes', 
-  'Kafka', 'PostgreSQL', 'MongoDB', 'LangGraph', 'AutoGen',
-  'AWS', 'Git', 'ElasticSearch', 'Linux'
+  'Python', 'Java', 'JavaScript', 'Go', 'Kotlin', 'C++', 'C',
+  'React', 'LangGraph', 'AutoGen', 'RAG', 'Jersey', 'Ktor', 'Jetpack Compose',
+  'PostgreSQL', 'MySQL', 'MongoDB', 'ElasticSearch', 'Vector Embeddings',
+  'Docker', 'Kubernetes', 'Kafka', 'AWS', 'Azure', 'Git', 'CI/CD'
 ];
 
 // --- SPOTLIGHT CARD ---

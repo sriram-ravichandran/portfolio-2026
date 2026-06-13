@@ -13,15 +13,15 @@ const projects = [
     links: { demo: '#', repo: '#' }
   },
   {
-    title: 'Voice Assistant',
-    description: 'A Python desktop application that processes natural language commands to execute system operations, fetch real-time web results, and automate routine tasks through voice interaction.',
-    tech: ['Python', 'NLP', 'APIs', 'Voice Recognition'],
+    title: 'MediaBridge',
+    description: 'A two-node Android media sync app using Kotlin and Jetpack Compose, with a Ktor embedded server for peer-to-peer transfers, SHA-256 deduplication, chunked resumable uploads, automatic device discovery, and Google Photos as final sync destination.',
+    tech: ['Kotlin', 'Jetpack Compose', 'Ktor', 'P2P', 'SHA-256'],
     links: { demo: '#', repo: '#' }
   },
   {
     title: 'Connect',
-    description: 'Full-stack social media application featuring posts, likes, real-time chat, and group functionality. Designed for seamless user interaction with modern web technologies.',
-    tech: ['React.js', 'Express.js', 'MySQL', 'WebSockets'],
+    description: 'A cross-platform Go CLI tool that scans a developer\'s machine to detect all installed tools and versions, with native OS registry/GUI app discovery, concurrent execution, and YAML/JSON environment snapshots with drift-checking.',
+    tech: ['Go', 'CLI', 'YAML', 'JSON', 'Concurrency'],
     links: { demo: '#', repo: '#' }
   },
 ];

@@ -17,7 +17,7 @@ const Hero = () => {
           transition={{ delay: 0.2, duration: 0.8 }}
         >
           {" "}
-          Full-Stack Developer{" "}
+          Full-Stack & Backend Engineer{" "}
         </motion.p>{" "}
         {/* Headline */}{" "}
         {/* Added responsive text sizes: text-5xl (mobile) -> sm:text-7xl -> md:text-8xl (desktop) */}{" "}
