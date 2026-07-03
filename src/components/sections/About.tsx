@@ -1,293 +1,350 @@
-import React, { useRef, useState, useEffect } from 'react';
+import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import {
-  Briefcase,
-  GraduationCap,
-  Code2,
-  Trophy,
-  Download,
-  Sparkles,
-} from 'lucide-react';
-import MagneticReveal from '@/components/MagneticReveal';
-import Timeline from '@/components/Timeline';
-import SkillPill from '@/components/SkillPill';
-import { cn } from '@/lib/utils'; 
+import { Download } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
-// --- DATA ---
+// ── Data ──────────────────────────────────────────────────────────────────────
 const education = [
   {
-    title: 'M.S. Computer Science',
-    subtitle: 'Illinois Institute of Technology',
-    date: '2024 - 2026',
-    description: 'GPA: 3.50',
+    idx: '01',
+    school: 'ILLINOIS INSTITUTE OF TECHNOLOGY',
+    degree: 'M.S. COMPUTER SCIENCE',
+    period: 'AUG 2024 — MAY 2026',
+    gpa: '3.50',
   },
   {
-    title: 'B.E. Computer Science',
-    subtitle: 'Sri Eshwar College of Engineering',
-    date: '2019 - 2023',
-    description: 'GPA: 3.66',
+    idx: '02',
+    school: 'SRI ESHWAR COLLEGE OF ENGINEERING',
+    degree: 'B.E. COMPUTER SCIENCE',
+    period: 'MAY 2019 — APR 2023',
+    gpa: '3.66',
   },
 ];
 
 const experience = [
   {
-    title: 'AI Agent Developer Intern',
-    subtitle: 'NeuralSeek • Miami, United States',
-    date: 'Oct 2025 – Nov 2025',
-    description:
-      'Built a RAG-powered AI agent with automated data lineage to ensure verifiable citations and reduce hallucinations. Improved LLM response quality using prompt engineering and ethical guardrails while meeting security and scalability requirements.',
+    badge: 'INTERN',
+    role: 'AI AGENT DEVELOPER',
+    company: 'NeuralSeek',
+    location: 'Miami, FL (Remote)',
+    period: 'OCT 2025 — NOV 2025',
+    desc: 'Engineered a RAG-powered AI agent with automated data lineage to guarantee verifiable citation accuracy and minimize model hallucinations. Optimized LLM response quality through advanced prompt engineering and ethical guardrails.',
+    color: '#00d4ff',
   },
   {
-    title: 'Member Technical Staff',
-    subtitle: 'Zoho Corporation • Chennai, India',
-    date: 'Jun 2023 – Jul 2023',
-    description:
-      'Resolved high-priority production issues affecting 10,000+ Apple devices and collaborated with frontend teams to ensure seamless REST API integration and troubleshooting.',
+    badge: 'STAFF',
+    role: 'MEMBER TECHNICAL STAFF',
+    company: 'Zoho Corporation',
+    location: 'Chennai, India',
+    period: 'JUN 2023 — JUL 2023',
+    desc: 'Resolved high-priority support tickets, applying fixes across 10,000+ Apple devices, boosting system functionality. Collaborated with front-end developers on REST API integration.',
+    color: '#ff6a00',
   },
   {
-    title: 'Project Trainee',
-    subtitle: 'Zoho Corporation • Chennai, India',
-    date: 'Aug 2022 – May 2023',
-    description:
-      'Identified and fixed security loopholes in the MDM system that enabled policy bypass, reducing violations by 10%. Authored product documentation and gained hands-on experience in debugging and feature-level development.',
+    badge: 'TRAIN',
+    role: 'PROJECT TRAINEE',
+    company: 'Zoho Corporation',
+    location: 'Chennai, India',
+    period: 'AUG 2022 — MAY 2023',
+    desc: 'Detected and resolved key glitches in the MDM system reducing policy violation cases by ~10%. Created product feature documentation reducing onboarding time for new developers.',
+    color: '#ff6a00',
   },
   {
-    title: 'Summer Intern',
-    subtitle: 'Zoho Corporation • Chennai, India',
-    date: 'May 2022 – Jun 2022',
-    description:
-      'Developed backend fundamentals through hands-on work with production systems, participating in code reviews and mentorship sessions to improve code quality and engineering best practices.',
+    badge: 'INTERN',
+    role: 'SUMMER INTERN',
+    company: 'Zoho Corporation',
+    location: 'Chennai, India',
+    period: 'MAY 2022 — JUN 2022',
+    desc: 'Acquired proficiency in backend development through hands-on work with production systems. Participated in code reviews and mentorship sessions.',
+    color: '#ff6a00',
   },
 ];
 
-const skills = [
-  'Python', 'Java', 'JavaScript', 'Go', 'Kotlin', 'C++', 'C',
-  'React', 'LangGraph', 'AutoGen', 'RAG', 'Jersey', 'Ktor', 'Jetpack Compose',
-  'PostgreSQL', 'MySQL', 'MongoDB', 'ElasticSearch', 'Vector Embeddings',
-  'Docker', 'Kubernetes', 'Kafka', 'AWS', 'Azure', 'Git', 'CI/CD'
+const skillMatrix = [
+  {
+    cat: 'LANGUAGES',
+    skills: ['Python', 'Java', 'JavaScript (ES6+)', 'TypeScript', 'Go', 'Kotlin', 'C++', 'C', 'SQL', 'HTML5', 'CSS3'],
+  },
+  {
+    cat: 'FRAMEWORKS & AI INFRA',
+    skills: ['LangGraph', 'LangChain', 'AutoGen', 'Multi-Agent Orchestration', 'Agentic AI', 'RAG Architecture', 'Prompt Engineering', 'LLM APIs (OpenAI, Claude)', 'React.js', 'Next.js', 'Node.js', 'FastAPI', 'RESTful APIs (Jersey, Ktor)', 'WebSockets', 'Java Servlets', 'Jetpack Compose'],
+  },
+  {
+    cat: 'DATABASES & VECTOR SEARCH',
+    skills: ['PostgreSQL', 'MySQL', 'MongoDB', 'ElasticSearch', 'Vector Databases', 'Vector Embeddings', 'Semantic Search', 'Graph Databases', 'Data Deduplication (SHA-256)'],
+  },
+  {
+    cat: 'CLOUD, DEVOPS & DISTRIBUTED SYSTEMS',
+    skills: ['AWS', 'Microsoft Azure', 'Docker', 'Kubernetes', 'Apache Kafka', 'Git', 'GitHub', 'GitHub Actions', 'CI/CD', 'Linux', 'Microservices Architecture', 'System Design', 'Peer-to-Peer (P2P) Systems', 'Embedded Servers'],
+  },
+  {
+    cat: 'ENGINEERING PRACTICES',
+    skills: ['Agile/Scrum', 'Code Reviews', 'Unit & E2E Testing (Playwright)', 'Debugging & Troubleshooting'],
+  },
 ];
 
-// --- SPOTLIGHT CARD ---
-const SpotlightCard = ({
-  children,
-  className = '',
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => {
-  const divRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [opacity, setOpacity] = useState(0);
+const achievements = [
+  { title: 'INTERIZON HACKATHON 2021', award: 'WINNER',     date: 'JAN 2023'  },
+  { title: 'FRESHATHON PROJECT EXPO',  award: 'JURY PANEL', date: 'JUNE 2024' },
+];
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!divRef.current) return;
-    const rect = divRef.current.getBoundingClientRect();
-    setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-  };
+// ── Corner bracket component ──────────────────────────────────────────────────
+const Corners = ({ size = 14, color = 'rgba(0,212,255,0.4)' }: { size?: number; color?: string }) => (
+  <>
+    <span className="absolute top-0 left-0 pointer-events-none" style={{ width: size, height: size, borderTop: `1.5px solid ${color}`, borderLeft: `1.5px solid ${color}` }} />
+    <span className="absolute top-0 right-0 pointer-events-none" style={{ width: size, height: size, borderTop: `1.5px solid ${color}`, borderRight: `1.5px solid ${color}` }} />
+    <span className="absolute bottom-0 left-0 pointer-events-none" style={{ width: size, height: size, borderBottom: `1.5px solid ${color}`, borderLeft: `1.5px solid ${color}` }} />
+    <span className="absolute bottom-0 right-0 pointer-events-none" style={{ width: size, height: size, borderBottom: `1.5px solid ${color}`, borderRight: `1.5px solid ${color}` }} />
+  </>
+);
 
-  return (
-    <div
-      ref={divRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setOpacity(1)}
-      onMouseLeave={() => setOpacity(0)}
-      className={cn(
-        'relative w-full overflow-hidden rounded-3xl border transition-colors',
-        'border-[rgba(119,119,119,0.2)] bg-[rgba(255,255,255,0.15)] backdrop-blur-sm hover:border-[rgba(217,179,38,0.35)]',
-        'dark:border-white/10 dark:bg-white/5 dark:hover:border-[rgba(217,179,38,0.35)]',
-        '[--spotlight-color:rgba(0,0,0,0.05)] dark:[--spotlight-color:rgba(255,255,255,0.06)]',
-        className
-      )}
-    >
-      <div
-        className="pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300"
-        style={{
-          opacity,
-          background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, var(--spotlight-color), transparent 40%)`,
-        }}
-      />
-      <div className="relative z-10">{children}</div>
-    </div>
-  );
-};
-
-// --- COUNTER ---
-const ExperienceCounter = () => {
+// ── Panel wrapper ─────────────────────────────────────────────────────────────
+const Panel = ({ children, className = '', delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) => {
   const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: '-80px' });
-  const [value, setValue] = useState(0);
-
-  useEffect(() => {
-    if (!isInView) return;
-
-    const target = 1.5;
-    const duration = 1000;
-    let start: number | null = null;
-
-    const animate = (timestamp: number) => {
-      if (!start) start = timestamp;
-      const progress = Math.min((timestamp - start) / duration, 1);
-      setValue(Number((progress * target).toFixed(1)));
-      if (progress < 1) requestAnimationFrame(animate);
-    };
-
-    requestAnimationFrame(animate);
-  }, [isInView]);
-
+  const inView = useInView(ref, { once: true, margin: '-60px' });
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   return (
-    <div ref={ref}>
-      <div className="text-4xl font-semibold text-foreground">~{value}</div>
-      <div className="mt-1 text-sm text-muted-foreground uppercase tracking-wider">
-        years industry experience
-      </div>
-    </div>
+    <motion.div
+      ref={ref}
+      className={`relative p-6 ${className}`}
+      style={{
+        background: isDark ? 'rgba(5,12,20,0.85)' : 'rgba(238,247,253,0.95)',
+        border: `1px solid ${isDark ? 'rgba(0,212,255,0.14)' : 'rgba(0,119,170,0.16)'}`,
+        backdropFilter: 'blur(10px)',
+        transition: 'background 0.4s ease, border-color 0.4s ease',
+      }}
+      initial={{ opacity: 0, y: 55, scale: 0.97 }}
+      animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}}
+      transition={{ type: 'spring', stiffness: 75, damping: 20, delay }}
+      whileHover={{ y: -5, transition: { type: 'spring', stiffness: 300, damping: 25 } }}
+    >
+      <Corners />
+      {children}
+    </motion.div>
   );
 };
 
-// --- MAIN COMPONENT ---
+// ── Panel header label ─────────────────────────────────────────────────────────
+const PanelHeader = ({ label }: { label: string }) => (
+  <div className="flex items-center gap-3 mb-5">
+    <span className="h-px flex-1 bg-gradient-to-r from-[rgba(0,212,255,0.5)] to-transparent" />
+    <span className="font-mono text-[9px] tracking-[0.25em] text-[#00d4ff]/70 uppercase whitespace-nowrap">
+      {label}
+    </span>
+    <span className="h-px w-6 bg-[rgba(0,212,255,0.3)]" />
+  </div>
+);
+
+// ── Main component ─────────────────────────────────────────────────────────────
 const About = () => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  const titleRef = useRef<HTMLDivElement>(null);
+  const titleInView = useInView(titleRef, { once: true });
+
   return (
-    <section id="about" className="relative py-32 px-6 overflow-hidden text-foreground transition-colors duration-300">
+    <section id="about" className="relative py-28 px-6">
       <div className="max-w-7xl mx-auto">
 
-        {/* SECTION HEADER (RESTORED) */}
-        <MagneticReveal className="mb-24 text-center md:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-secondary/50 backdrop-blur-sm mb-6 dark:border-white/10 dark:bg-white/5">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              About Me
-            </span>
-          </div>
-
-          <h2 className="headline-lg mt-2 text-foreground">
-            CRAFTING DIGITAL <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-foreground to-foreground/40">
-              EXPERIENCES.
-            </span>
-          </h2>
-        </MagneticReveal>
-
-        {/* BENTO GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
-
-          {/* LEFT COLUMN */}
-          <div className="lg:col-span-4 flex flex-col gap-6">
-            <MagneticReveal>
-              <SpotlightCard className="p-8">
-                <div className="flex items-center gap-3 mb-6 text-muted-foreground">
-                  <GraduationCap className="w-5 h-5" />
-                  <span className="text-sm font-medium uppercase tracking-widest">Education</span>
-                </div>
-                <Timeline items={education} />
-              </SpotlightCard>
-            </MagneticReveal>
-
-            <MagneticReveal>
-  <SpotlightCard className="p-8 min-h-[340px] flex flex-col justify-center">
-    <div className="flex items-center gap-3 mb-10 text-muted-foreground">
-      <Sparkles className="w-5 h-5" />
-      <span className="text-sm font-medium uppercase tracking-widest">
-        Highlights
-      </span>
-    </div>
-
-    <div className="space-y-10">
-      <ExperienceCounter />
-
-      <p className="text-muted-foreground leading-relaxed max-w-sm">
-        Debugged and fixed issues directly in production environments
-      </p>
-    </div>
-  </SpotlightCard>
-</MagneticReveal>
-
-          </div>
-
-          {/* EXPERIENCE */}
-          <MagneticReveal className="md:row-span-2 lg:col-span-8">
-  <SpotlightCard className="p-8">
-    <div className="flex items-center gap-3 mb-6 text-muted-foreground">
-      <Briefcase className="w-5 h-5" />
-      <span className="text-sm font-medium uppercase tracking-widest">
-        Experience
-      </span>
-    </div>
-    <Timeline items={experience} />
-  </SpotlightCard>
-</MagneticReveal>
-
-          {/* SKILLS */}
-          <MagneticReveal className="lg:col-span-8">
-            <SpotlightCard className="p-8">
-              <div className="flex items-center gap-3 mb-6 text-muted-foreground">
-                <Code2 className="w-5 h-5" />
-                <span className="text-sm font-medium uppercase tracking-widest">Technical Arsenal</span>
-              </div>
-              <div className="flex flex-wrap gap-2.5">
-                {skills.map((skill, index) => (
-                  <SkillPill key={skill} skill={skill} index={index} />
-                ))}
-              </div>
-            </SpotlightCard>
-          </MagneticReveal>
-
-          {/* ACHIEVEMENTS */}
-          <MagneticReveal className="lg:col-span-4">
-            <SpotlightCard className="p-8">
-              <div className="flex items-center gap-3 mb-6 text-muted-foreground">
-                <Trophy className="w-5 h-5" />
-                <span className="text-sm font-medium uppercase tracking-widest">Achievements</span>
-              </div>
-              <ul className="space-y-6">
-                <li>
-                  <p className="font-medium text-lg text-foreground">Interizon Hackathon</p>
-                  <p className="text-sm text-muted-foreground">2021 • Winner</p>
-                </li>
-                <li>
-                  <p className="font-medium text-lg text-foreground">Freshathon Expo</p>
-                  <p className="text-sm text-muted-foreground">2024 • Jury Panel</p>
-                </li>
-              </ul>
-            </SpotlightCard>
-          </MagneticReveal>
-        </div>
-
-        {/* BIO SECTION (RESTORED) */}
-        <div className="mt-20 grid lg:grid-cols-2 gap-12 items-start">
+        {/* Section header */}
+        <div ref={titleRef} className="mb-16">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
+            className="wd-badge mb-5 inline-flex"
+            initial={{ opacity: 0, x: -40, filter: 'blur(6px)' }}
+            animate={titleInView ? { opacity: 1, x: 0, filter: 'blur(0px)' } : {}}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
-            <p className="text-xl md:text-2xl leading-relaxed text-muted-foreground font-light">
-  I'm a <span className="text-foreground font-medium">Full-Stack Developer</span> specializing in scalable systems, distributed architectures, and cloud-native applications.
-</p>
-<p className="mt-6 text-lg leading-relaxed text-muted-foreground/80">
-  Currently pursuing my Master's in Computer Science at Illinois Institute of Technology, I bring hands-on experience from Zoho Corporation and NeuralSeek - Engineering everything from secure MDM infrastructures to RAG-powered AI agents.
-</p>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#00d4ff] animate-pulse" />
+            SUBJECT PROFILE
           </motion.div>
 
-          <motion.div
-            className="flex items-center justify-start lg:justify-end"
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            viewport={{ once: true }}
+          <motion.h2
+            className="font-black uppercase text-[#cce8f4]"
+            style={{ fontSize: 'clamp(2.5rem,7vw,5rem)', letterSpacing: '-0.02em', lineHeight: 0.88 }}
+            initial={{ opacity: 0, y: 70, filter: 'blur(12px)' }}
+            animate={titleInView ? { opacity: 1, y: 0, filter: 'blur(0px)' } : {}}
+            transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1], delay: 0.08 }}
           >
-            <MagneticReveal>
-              <a 
-                href="https://drive.google.com/file/d/183Lp_e2Jk8mGbcJFjZW5YBUiszMMx3XR/view?usp=drive_link"
+            CREDENTIALS &amp;{' '}
+            <span style={{ color: isDark ? '#00d4ff' : '#0099c8', textShadow: isDark ? '0 0 30px rgba(0,212,255,0.4)' : 'none' }}>
+              DEPLOYMENT
+            </span>
+          </motion.h2>
+        </div>
+
+        {/* Main grid: Education + Achievements left, Experience right */}
+        <div className="grid lg:grid-cols-12 gap-5 mb-5 items-start">
+
+          {/* Left column: Education + Achievements stacked */}
+          <div className="lg:col-span-4 flex flex-col gap-5">
+          <Panel delay={0.1}>
+            <PanelHeader label="DATABASE RECORDS" />
+            <div className="space-y-6">
+              {education.map((edu, i) => (
+                <motion.div
+                  key={edu.idx}
+                  className="flex gap-4"
+                  initial={{ opacity: 0, x: -30 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, margin: '-30px' }}
+                  transition={{ duration: 0.7, delay: i * 0.13, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <span className="font-mono text-[10px] text-[#00d4ff]/40 mt-0.5 shrink-0">[{edu.idx}]</span>
+                  <div>
+                    <p className="font-mono text-[9px] tracking-[0.15em] text-[#00d4ff] mb-1">{edu.school}</p>
+                    <p className="text-[#cce8f4] text-sm font-semibold mb-1">{edu.degree}</p>
+                    <div className="flex items-center justify-between">
+                      <p className="font-mono text-[9px] tracking-widest text-[#8ba9b8]/50">{edu.period}</p>
+                      <span className="font-mono text-[9px] px-2 py-0.5" style={{ border: '1px solid rgba(0,212,255,0.25)', color: '#00d4ff' }}>
+                        GPA {edu.gpa}
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </Panel>
+
+          {/* Achievements */}
+          <Panel delay={0.25}>
+            <PanelHeader label="CITATIONS" />
+            <div className="space-y-5">
+              {achievements.map((a, i) => (
+                <motion.div
+                  key={i}
+                  className="flex items-start gap-3"
+                  initial={{ opacity: 0, x: -24 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, margin: '-20px' }}
+                  transition={{ duration: 0.7, delay: i * 0.15, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <span className="text-[#00d4ff]/30 font-mono text-xs mt-0.5">●</span>
+                  <div>
+                    <p className="font-mono text-[10px] tracking-[0.12em] text-[#cce8f4] mb-1">{a.title}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[8px] px-2 py-0.5" style={{ border: '1px solid rgba(255,106,0,0.3)', color: '#ff8f3f', background: 'rgba(255,106,0,0.06)' }}>
+                        {a.award}
+                      </span>
+                      <span className="font-mono text-[9px] text-[#8ba9b8]/40">{a.date}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </Panel>
+          </div>{/* end left column */}
+
+          {/* Experience */}
+          <Panel className="lg:col-span-8" delay={0.15}>
+            <PanelHeader label="DEPLOYMENT HISTORY" />
+            <div className="space-y-5">
+              {experience.map((exp, i) => (
+                <motion.div
+                  key={i}
+                  className="flex gap-4 pb-5 border-b border-[rgba(0,212,255,0.07)] last:border-0 last:pb-0"
+                  initial={{ opacity: 0, y: 30, filter: 'blur(4px)' }}
+                  whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  viewport={{ once: true, margin: '-20px' }}
+                  transition={{ duration: 0.75, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <div className="shrink-0 mt-0.5">
+                    <span
+                      className="font-mono text-[8px] tracking-widest px-1.5 py-0.5"
+                      style={{ border: `1px solid ${exp.color}40`, color: exp.color, background: `${exp.color}08` }}
+                    >
+                      {exp.badge}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2 mb-1">
+                      <p className="font-mono text-[9px] tracking-[0.15em]" style={{ color: exp.color }}>{exp.role}</p>
+                      <p className="font-mono text-[9px] tracking-widest text-[#8ba9b8]/40">{exp.period}</p>
+                    </div>
+                    <p className="text-[#cce8f4]/75 text-sm mb-1.5">{exp.company} · {exp.location}</p>
+                    <p className="text-[#8ba9b8]/65 text-sm leading-relaxed">{exp.desc}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </Panel>
+        </div>
+
+        {/* Technical skills — full width */}
+        <Panel className="mb-5" delay={0.2}>
+          <PanelHeader label="TECHNICAL ARSENAL" />
+          <div className="space-y-4">
+            {skillMatrix.map((row, ri) => (
+              <div key={row.cat} className="flex flex-wrap items-start gap-x-5 gap-y-2 md:flex-nowrap">
+                <span className="font-mono text-[9px] tracking-[0.18em] whitespace-nowrap pt-0.5 w-52 shrink-0 text-[#00d4ff]/60">
+                  [{row.cat}]
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {row.skills.map((s, si) => (
+                    <motion.span
+                      key={s}
+                      className="wd-tag"
+                      initial={{ opacity: 0, y: 12, scale: 0.9 }}
+                      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                      viewport={{ once: true, margin: '-20px' }}
+                      transition={{ type: 'spring', stiffness: 220, damping: 20, delay: ri * 0.05 + si * 0.02 }}
+                    >
+                      {s}
+                    </motion.span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+
+        {/* Bio + Resume — full width */}
+        <Panel delay={0.3}>
+          <PanelHeader label="OPERATIVE BRIEF" />
+          <div className="flex flex-col md:flex-row gap-8 items-start">
+            <div className="flex-1 space-y-4">
+              <motion.p
+                className="flex gap-3 text-[#8ba9b8]/80 leading-relaxed"
+                style={{ fontSize: '1rem' }}
+                initial={{ opacity: 0, y: 24, filter: 'blur(6px)' }}
+                whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                viewport={{ once: true, margin: '-20px' }}
+                transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <span className="font-mono text-[#00d4ff]/50 shrink-0 mt-0.5">&gt;</span>
+                <span>
+                  <span className="text-[#cce8f4] font-medium">Full-Stack &amp; Backend Engineer</span> specializing in
+                  scalable systems, distributed architectures, and cloud-native applications.
+                </span>
+              </motion.p>
+              <motion.p
+                className="flex gap-3 text-[#8ba9b8]/70 leading-relaxed"
+                style={{ fontSize: '0.95rem' }}
+                initial={{ opacity: 0, y: 24, filter: 'blur(6px)' }}
+                whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                viewport={{ once: true, margin: '-20px' }}
+                transition={{ duration: 0.85, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <span className="font-mono text-[#00d4ff]/40 shrink-0 mt-0.5">&gt;</span>
+                <span>
+                  M.S. Computer Science — Illinois Institute of Technology, 2026. Experience across Zoho Corporation
+                  (3 roles) and NeuralSeek — from securing MDM infrastructure to engineering RAG-powered AI agents.
+                </span>
+              </motion.p>
+            </div>
+            <div className="shrink-0 md:pt-1">
+              <a
+                href="https://docs.google.com/document/d/1iXWJzeLECENQXcnyOjwzMGs5a50ip8P5_9nnBsSOXLE/edit?usp=sharing"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group relative px-8 py-4 bg-foreground text-background rounded-full font-semibold flex items-center gap-3 hover:bg-foreground/90 transition-all shadow-lg hover:shadow-xl"
+                className="wd-btn inline-flex"
               >
-                Download Resume
-                <Download className="w-4 h-4 transition-transform group-hover:translate-y-1" />
+                DOWNLOAD RESUME
+                <Download className="w-3.5 h-3.5" />
               </a>
-            </MagneticReveal>
-          </motion.div>
-        </div>
+            </div>
+          </div>
+        </Panel>
 
       </div>
     </section>

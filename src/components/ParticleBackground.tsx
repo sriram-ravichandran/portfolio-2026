@@ -1,330 +1,317 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
-// Local implementation of useTheme to replace the missing external import
-// Now watches for class changes on document.documentElement for Tailwind compatibility
-const useTheme = () => {
-  const [theme, setTheme] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-    }
-    return 'dark';
-  });
+interface Node {
+  x: number; y: number;
+  vx: number; vy: number;
+  size: number;
+  phase: number;
+}
 
-  useEffect(() => {
-    const updateTheme = () => {
-      const isDark = document.documentElement.classList.contains('dark');
-      setTheme(isDark ? 'dark' : 'light');
-    };
-
-    // Initial check
-    updateTheme();
-
-    // Create an observer to watch for class changes on the html element
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.attributeName === 'class') {
-          updateTheme();
-        }
-      });
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
-  return { theme };
-};
-
-const ParticleCanvas = ({ currentTheme }: { currentTheme: string }) => {
+const ParticleBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationFrameRef = useRef<number>();
-  const themeRef = useRef(currentTheme);
-
-  // Keep theme ref in sync
-  useEffect(() => {
-    themeRef.current = currentTheme;
-  }, [currentTheme]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
-    const gl = canvas.getContext('webgl', { 
-      alpha: false, 
-      antialias: false,
-      powerPreference: 'high-performance'
-    });
-    if (!gl) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
     let w = window.innerWidth;
     let h = window.innerHeight;
+    let animId: number;
+    const mouse = { x: -9999, y: -9999 };
 
-    function resize() {
+    const resize = () => {
       w = window.innerWidth;
       h = window.innerHeight;
-      canvas!.width = w;
-      canvas!.height = h;
-      gl!.viewport(0, 0, w, h);
-    }
+      canvas.width  = w;
+      canvas.height = h;
+    };
     resize();
-    window.addEventListener('resize', resize);
 
-    // Vertex Shader
-    const vertexShaderSource = `
-      attribute vec2 a_position;
-      attribute float a_size;
-      attribute float a_opacity;
-      
-      uniform vec2 u_resolution;
-      uniform float u_time;
-      
-      varying float v_opacity;
-      
-      void main() {
-        vec2 pos = a_position / u_resolution * 2.0 - 1.0;
-        pos.y = -pos.y;
-        
-        gl_Position = vec4(pos, 0.0, 1.0);
-        gl_PointSize = a_size;
-        v_opacity = a_opacity;
-      }
-    `;
+    // ── Nodes ───────────────────────────────────────────────────────────────
+    const NODE_COUNT = 65;
+    const nodes: Node[] = Array.from({ length: NODE_COUNT }, () => ({
+      x:     Math.random() * w,
+      y:     Math.random() * h,
+      vx:    (Math.random() - 0.5) * 0.38,
+      vy:    (Math.random() - 0.5) * 0.38,
+      size:  Math.random() * 1.8 + 1.2,
+      phase: Math.random() * Math.PI * 2,
+    }));
 
-    // Fragment Shader
-    const fragmentShaderSource = `
-      precision mediump float;
-      
-      uniform vec3 u_color;
-      varying float v_opacity;
-      
-      void main() {
-        vec2 center = gl_PointCoord - 0.5;
-        float dist = length(center);
-        
-        if (dist > 0.5) discard;
-        
-        float alpha = smoothstep(0.5, 0.0, dist) * v_opacity;
-        gl_FragColor = vec4(u_color, alpha);
-      }
-    `;
+    // ── Scan line state ──────────────────────────────────────────────────────
+    let scanY      = -60;
+    let nextScan   = Date.now() + 4000;
+    let scanActive = false;
 
-    function createShader(gl: WebGLRenderingContext, type: number, source: string) {
-      const shader = gl.createShader(type);
-      if (!shader) return null;
-      gl.shaderSource(shader, source);
-      gl.compileShader(shader);
-      return shader;
-    }
+    // ── Profile ring state ──────────────────────────────────────────────────
+    let profileIdx    = -1;
+    let profileRadius = 0;
+    let nextProfile   = Date.now() + 6000;
 
-    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-    if (!vertexShader || !fragmentShader) return;
+    // ── Data packets ──────────────────────────────────────────────────────
+    interface Packet { fromIdx: number; toIdx: number; progress: number; speed: number; }
+    const packets: Packet[] = [];
+    let nextPacket = Date.now() + 2000;
+    const MAX_PACKETS = 8;
 
-    const program = gl.createProgram();
-    if (!program) return;
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-    gl.useProgram(program);
-
-    const positionLoc = gl.getAttribLocation(program, 'a_position');
-    const sizeLoc = gl.getAttribLocation(program, 'a_size');
-    const opacityLoc = gl.getAttribLocation(program, 'a_opacity');
-    const resolutionLoc = gl.getUniformLocation(program, 'u_resolution');
-    const timeLoc = gl.getUniformLocation(program, 'u_time');
-    const colorLoc = gl.getUniformLocation(program, 'u_color');
-
-    const config = {
-      particleCount: 400,
-      baseSpeed: 0.2,
-      focalLength: 600,
+    // ── Scroll position + velocity for parallax ───────────────────────────
+    let scrollY    = 0;
+    let scrollVel  = 0;
+    let lastScroll = 0;
+    const onScroll = () => {
+      const delta = window.scrollY - lastScroll;
+      scrollVel   = Math.min(Math.abs(delta) * 0.15, 2.5);
+      lastScroll  = window.scrollY;
+      scrollY     = window.scrollY;
     };
+    window.addEventListener('scroll', onScroll, { passive: true });
 
-    interface Particle {
-      x: number;
-      y: number;
-      z: number;
-      size: number;
-      vx: number;
-      vy: number;
-      life: number;
-      opacity: number;
-    }
-
-    const particles: Particle[] = [];
-
-    function createParticle(): Particle {
-      return {
-        x: Math.random() * w - w / 2,
-        y: Math.random() * h - h / 2,
-        z: Math.random() * 2000 - 1000,
-        size: Math.random() * 3 + 2.0,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
-        life: Math.random() * Math.PI * 2,
-        opacity: Math.random() * 0.5 + 0.5,
-      };
-    }
-
-    for (let i = 0; i < config.particleCount; i++) {
-      particles.push(createParticle());
-    }
-
-    let mouse = { x: 0, y: 0 };
-    const handleMouseMove = (e: MouseEvent) => {
-      mouse.x = e.clientX - w / 2;
-      mouse.y = e.clientY - h / 2;
+    // ── Mouse ────────────────────────────────────────────────────────────────
+    const onMouseMove = (e: MouseEvent) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
     };
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', onMouseMove);
 
-    const positionBuffer = gl.createBuffer();
-    const sizeBuffer = gl.createBuffer();
-    const opacityBuffer = gl.createBuffer();
+    const onResize = () => {
+      resize();
+      nodes.forEach(n => {
+        n.x = Math.min(n.x, w);
+        n.y = Math.min(n.y, h);
+      });
+    };
+    window.addEventListener('resize', onResize);
 
-    gl.enable(gl.BLEND);
+    // ── Draw loop ────────────────────────────────────────────────────────────
+    const draw = () => {
+      animId = requestAnimationFrame(draw);
+      const now = Date.now();
+      const t   = now * 0.001;
 
-    function draw() {
-      const time = Date.now() * 0.001;
-      
-      // Get current theme dynamically from ref
-      const isDark = themeRef.current === 'dark';
-      
-      // Recalculate theme-dependent values each frame
-      const particleColor = isDark 
-        ? [1.0, 0.88, 0.35]      // Gold RGB for dark mode
-        : [0.90, 0.45, 0.10];   // Darker amber/orange RGB for light mode
+      // Background
+      ctx.fillStyle = '#030507';
+      ctx.fillRect(0, 0, w, h);
 
-      const bgColor = isDark
-        ? [0.05, 0.05, 0.05]  // Very dark for dark mode
-        : [0.94, 0.94, 0.94];    // Pure white for light mode
-
-      // Update blending mode dynamically based on theme
-      if (isDark) {
-        gl!.blendFunc(gl!.SRC_ALPHA, gl!.ONE); // Additive for dark mode
-      } else {
-        gl!.blendFunc(gl!.SRC_ALPHA, gl!.ONE_MINUS_SRC_ALPHA); // Normal for light mode
+      // Subtle hex-grid background lines with scroll parallax
+      const parallaxShift = scrollY * 0.08;
+      ctx.strokeStyle = 'rgba(0, 212, 255, 0.025)';
+      ctx.lineWidth = 0.5;
+      const grid = 80;
+      for (let gx = 0; gx < w; gx += grid) {
+        ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, h); ctx.stroke();
+      }
+      const gridOffsetY = parallaxShift % grid;
+      for (let gy = -grid + gridOffsetY; gy < h + grid; gy += grid) {
+        ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(w, gy); ctx.stroke();
       }
 
-      particles.forEach(p => {
-        const noise = Math.sin(p.y * 0.002 + time) * Math.cos(p.x * 0.002 + time);
-        
-        p.x += p.vx + Math.cos(time * 0.5 + p.y * 0.005) * 0.5;
-        p.y -= config.baseSpeed + Math.abs(noise) * 0.5;
+      // Decay scroll velocity
+      scrollVel *= 0.92;
 
-        const dx = p.x - mouse.x;
-        const dy = p.y - mouse.y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        if(dist < 200 && dist > 0) {
-            const force = (200 - dist) / 200;
-            p.x += (dx/dist) * force * 2;
-            p.y += (dy/dist) * force * 2;
+      // Move nodes
+      nodes.forEach(n => {
+        const speed = 1 + scrollVel;
+        n.x += n.vx * speed;
+        n.y += n.vy * speed;
+        if (n.x < 0 || n.x > w) n.vx *= -1;
+        if (n.y < 0 || n.y > h) n.vy *= -1;
+
+        // Mouse repulsion
+        const dx = n.x - mouse.x;
+        const dy = n.y - mouse.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < 9000 && d2 > 0) {
+          const d   = Math.sqrt(d2);
+          const f   = (95 - d) / 95;
+          n.x += (dx / d) * f * 1.4;
+          n.y += (dy / d) * f * 1.4;
         }
-
-        if (p.y < -h / 1.5) p.y = h / 1.5;
-        if (p.x > w / 1.5) p.x = -w / 1.5;
-        if (p.x < -w / 1.5) p.x = w / 1.5;
-        
-        p.z -= 0.5;
-        if(p.z < -1000) p.z = 1000;
       });
 
-      particles.sort((a, b) => a.z - b.z);
-
-      // Clear with dynamically calculated background color
-      gl!.clearColor(bgColor[0], bgColor[1], bgColor[2], 1.0);
-      gl!.clear(gl!.COLOR_BUFFER_BIT);
-
-      const positions: number[] = [];
-      const sizes: number[] = [];
-      const opacities: number[] = [];
-
-      particles.forEach(p => {
-        const scale = config.focalLength / (config.focalLength + p.z);
-        const x2d = w / 2 + p.x * scale;
-        const y2d = h / 2 + p.y * scale;
-        const visualSize = p.size * scale;
-        const sparkle = Math.sin(time * 3 + p.life) * 0.2 + 0.8;
-        
-        let opacity = p.opacity * sparkle;
-        let size = visualSize;
-        
-        if (!isDark) {
-          opacity *= 1.2;
-          opacity = Math.min(opacity, 0.9);
+      // Draw edges between nearby nodes
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx   = nodes[i].x - nodes[j].x;
+          const dy   = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 185) {
+            const alpha = (1 - dist / 185) * 0.28;
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(0, 212, 255, ${alpha})`;
+            ctx.lineWidth   = 0.5;
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.stroke();
+          }
         }
-        
-        if (p.z < -200) {
-          size *= 1.5;
-          opacity *= 0.6;
-        } else if (p.z > 300) {
-          size *= 2;
-          opacity *= 0.5;
-        }
+      }
 
-        positions.push(x2d, y2d);
-        sizes.push(size * 2);
-        opacities.push(opacity);
+      // Draw nodes
+      nodes.forEach((n, i) => {
+        const pulse       = 0.55 + Math.sin(t * 1.8 + n.phase) * 0.45;
+        const isProfiled  = profileIdx === i;
+        const nearMouse   = Math.sqrt((n.x - mouse.x) ** 2 + (n.y - mouse.y) ** 2) < 80;
+        const glowR       = n.size * (isProfiled || nearMouse ? 10 : 5);
+        const glowAlpha   = pulse * (isProfiled ? 1.0 : nearMouse ? 0.8 : 0.5);
+
+        // Glow
+        const grd = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, glowR);
+        grd.addColorStop(0, `rgba(0, 212, 255, ${glowAlpha})`);
+        grd.addColorStop(1, 'rgba(0, 212, 255, 0)');
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Core dot
+        ctx.fillStyle = isProfiled || nearMouse ? '#00d4ff' : `rgba(0, 180, 220, ${pulse * 0.85})`;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.size, 0, Math.PI * 2);
+        ctx.fill();
       });
 
-      gl!.bindBuffer(gl!.ARRAY_BUFFER, positionBuffer);
-      gl!.bufferData(gl!.ARRAY_BUFFER, new Float32Array(positions), gl!.DYNAMIC_DRAW);
-      gl!.enableVertexAttribArray(positionLoc);
-      gl!.vertexAttribPointer(positionLoc, 2, gl!.FLOAT, false, 0, 0);
+      // Scan line
+      if (scanActive) {
+        scanY += 4;
+        const sg = ctx.createLinearGradient(0, scanY - 50, 0, scanY + 50);
+        sg.addColorStop(0, 'rgba(0,212,255,0)');
+        sg.addColorStop(0.5, 'rgba(0,212,255,0.065)');
+        sg.addColorStop(1, 'rgba(0,212,255,0)');
+        ctx.fillStyle = sg;
+        ctx.fillRect(0, scanY - 50, w, 100);
 
-      gl!.bindBuffer(gl!.ARRAY_BUFFER, sizeBuffer);
-      gl!.bufferData(gl!.ARRAY_BUFFER, new Float32Array(sizes), gl!.DYNAMIC_DRAW);
-      gl!.enableVertexAttribArray(sizeLoc);
-      gl!.vertexAttribPointer(sizeLoc, 1, gl!.FLOAT, false, 0, 0);
+        // Leading edge bright line
+        ctx.fillStyle = 'rgba(0,212,255,0.18)';
+        ctx.fillRect(0, scanY, w, 1);
 
-      gl!.bindBuffer(gl!.ARRAY_BUFFER, opacityBuffer);
-      gl!.bufferData(gl!.ARRAY_BUFFER, new Float32Array(opacities), gl!.DYNAMIC_DRAW);
-      gl!.enableVertexAttribArray(opacityLoc);
-      gl!.vertexAttribPointer(opacityLoc, 1, gl!.FLOAT, false, 0, 0);
+        if (scanY > h + 60) {
+          scanActive   = false;
+          scanY        = -60;
+          nextScan     = now + 9000;
+        }
+      } else if (now > nextScan) {
+        scanActive = true;
+        scanY      = -60;
+      }
 
-      gl!.uniform2f(resolutionLoc, w, h);
-      gl!.uniform1f(timeLoc, time);
-      gl!.uniform3fv(colorLoc, particleColor);
+      // Profile ring
+      if (profileIdx >= 0) {
+        const n = nodes[profileIdx];
+        profileRadius += 2.5;
+        const fadeAlpha = Math.max(0, 1 - profileRadius / 110) * 0.9;
 
-      gl!.drawArrays(gl!.POINTS, 0, particles.length);
+        // Expanding ring
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(0, 212, 255, ${fadeAlpha})`;
+        ctx.lineWidth   = 1.5;
+        ctx.arc(n.x, n.y, profileRadius, 0, Math.PI * 2);
+        ctx.stroke();
 
-      animationFrameRef.current = requestAnimationFrame(draw);
-    }
+        // Inner dashed ring
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(0, 212, 255, ${Math.min(fadeAlpha * 0.7, 0.5)})`;
+        ctx.lineWidth   = 1;
+        ctx.arc(n.x, n.y, n.size * 4, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Corner tick marks
+        const tickLen = 8;
+        const tickR   = n.size * 6;
+        [0, 90, 180, 270].forEach(angle => {
+          const rad = (angle * Math.PI) / 180;
+          const tx  = n.x + Math.cos(rad) * tickR;
+          const ty  = n.y + Math.sin(rad) * tickR;
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(0, 212, 255, ${fadeAlpha})`;
+          ctx.lineWidth   = 1.5;
+          ctx.moveTo(tx, ty);
+          ctx.lineTo(tx + Math.cos(rad) * tickLen, ty + Math.sin(rad) * tickLen);
+          ctx.stroke();
+        });
+
+        if (profileRadius > 120) {
+          profileIdx    = -1;
+          profileRadius = 0;
+          nextProfile   = now + 8000;
+        }
+      } else if (now > nextProfile) {
+        profileIdx    = Math.floor(Math.random() * NODE_COUNT);
+        profileRadius = 0;
+      }
+
+      // ── Data packets ────────────────────────────────────────────────────
+      // Spawn new packets along existing edges
+      if (now > nextPacket && packets.length < MAX_PACKETS) {
+        // Find a valid edge pair
+        for (let attempt = 0; attempt < 10; attempt++) {
+          const fi = Math.floor(Math.random() * NODE_COUNT);
+          const ti = Math.floor(Math.random() * NODE_COUNT);
+          if (fi === ti) continue;
+          const pdx = nodes[fi].x - nodes[ti].x;
+          const pdy = nodes[fi].y - nodes[ti].y;
+          if (Math.sqrt(pdx * pdx + pdy * pdy) < 185) {
+            packets.push({ fromIdx: fi, toIdx: ti, progress: 0, speed: 0.008 + Math.random() * 0.008 });
+            break;
+          }
+        }
+        nextPacket = now + 1200 + Math.random() * 800;
+      }
+
+      // Draw & update packets
+      for (let pi = packets.length - 1; pi >= 0; pi--) {
+        const pkt = packets[pi];
+        pkt.progress += pkt.speed;
+        if (pkt.progress >= 1) { packets.splice(pi, 1); continue; }
+
+        const nFrom = nodes[pkt.fromIdx];
+        const nTo   = nodes[pkt.toIdx];
+        const px    = nFrom.x + (nTo.x - nFrom.x) * pkt.progress;
+        const py    = nFrom.y + (nTo.y - nFrom.y) * pkt.progress;
+
+        // Trail
+        const trailLen = 4;
+        for (let ti = trailLen; ti >= 0; ti--) {
+          const tp = Math.max(0, pkt.progress - ti * 0.025);
+          const tx = nFrom.x + (nTo.x - nFrom.x) * tp;
+          const ty = nFrom.y + (nTo.y - nFrom.y) * tp;
+          const ta = (1 - ti / trailLen) * 0.7;
+          ctx.fillStyle = `rgba(0, 212, 255, ${ta})`;
+          ctx.beginPath();
+          ctx.arc(tx, ty, 1.5 - ti * 0.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Bright head
+        const pgrd = ctx.createRadialGradient(px, py, 0, px, py, 6);
+        pgrd.addColorStop(0, 'rgba(0, 212, 255, 0.9)');
+        pgrd.addColorStop(1, 'rgba(0, 212, 255, 0)');
+        ctx.fillStyle = pgrd;
+        ctx.beginPath();
+        ctx.arc(px, py, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    };
 
     draw();
 
     return () => {
-      window.removeEventListener('resize', resize);
-      window.removeEventListener('mousemove', handleMouseMove);
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
+      cancelAnimationFrame(animId);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('scroll', onScroll);
     };
-  }, [currentTheme]); // Added currentTheme to dependencies to force refresh on theme change
+  }, []);
 
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 -z-10 pointer-events-none"
-      style={{ backgroundColor: currentTheme === 'dark' ? '#050505' : '#ffffff' }}
+      className="fixed inset-0 pointer-events-none"
+      style={{ zIndex: -1 }}
     />
-  );
-};
-
-const ParticleBackground = () => {
-  const { theme } = useTheme();
-
-  return (
-    <>
-      <div 
-        className="fixed inset-0 -z-10 pointer-events-none transition-colors duration-300"
-        style={{ backgroundColor: theme === 'dark' ? '#050505' : '#ffffff' }}
-      />
-      <ParticleCanvas currentTheme={theme} />
-    </>
   );
 };
 

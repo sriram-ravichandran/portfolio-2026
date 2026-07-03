@@ -1,153 +1,280 @@
-import React, { useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Layers } from 'lucide-react';
-import MagneticReveal from '@/components/MagneticReveal';
-import { cn } from '@/lib/utils';
+import { useRef, useState, useEffect, useCallback } from 'react';
+import { motion, useInView } from 'framer-motion';
+import { useTheme } from '@/contexts/ThemeContext';
 
-// --- DATA ---
-const projects = [
+// ── Data ──────────────────────────────────────────────────────────────────────
+const PROJECTS = [
   {
-    title: 'SmartHomes',
-    description: 'A scalable e-commerce platform with intelligent search and AI-powered shopping assistance. Features real-time support via OpenAI, ElasticSearch integration, and containerized deployment.',
-    tech: ['React', 'Servlets', 'MySQL', 'MongoDB', 'ElasticSearch', 'Docker', 'OpenAI'],
-    links: { demo: '#', repo: '#' }
+    op:    '01',
+    title: 'SMARTHOMES',
+    status:'DEPLOYED',
+    desc:  'Scalable e-commerce platform with AI-powered shopping assistant and real-time support. Features intelligent search via ElasticSearch, containerized microservices, and OpenAI assistant integration.',
+    stack: ['React', 'Java Servlets', 'MySQL', 'MongoDB', 'ElasticSearch', 'Docker', 'OpenAI'],
+    color: '#00d4ff',
   },
   {
-    title: 'MediaBridge',
-    description: 'A two-node Android media sync app using Kotlin and Jetpack Compose, with a Ktor embedded server for peer-to-peer transfers, SHA-256 deduplication, chunked resumable uploads, automatic device discovery, and Google Photos as final sync destination.',
-    tech: ['Kotlin', 'Jetpack Compose', 'Ktor', 'P2P', 'SHA-256'],
-    links: { demo: '#', repo: '#' }
+    op:    '02',
+    title: 'MEDIABRIDGE',
+    status:'DEPLOYED',
+    desc:  'Two-node Android media sync app using peer-to-peer transfers with SHA-256 deduplication, chunked resumable uploads, automatic device discovery, and Google Photos as the final sync destination.',
+    stack: ['Kotlin', 'Jetpack Compose', 'Ktor', 'P2P', 'SHA-256'],
+    color: '#ff6a00',
   },
   {
-    title: 'Connect',
-    description: 'A cross-platform Go CLI tool that scans a developer\'s machine to detect all installed tools and versions, with native OS registry/GUI app discovery, concurrent execution, and YAML/JSON environment snapshots with drift-checking.',
-    tech: ['Go', 'CLI', 'YAML', 'JSON', 'Concurrency'],
-    links: { demo: '#', repo: '#' }
+    op:    '03',
+    title: 'STACKGET',
+    status:'DEPLOYED',
+    desc:  'Cross-platform Go CLI tool available on npm that scans a developer\'s machine to detect all installed tools and versions. Features native OS registry/GUI app discovery, concurrent execution, and YAML/JSON environment snapshots with drift-checking.',
+    stack: ['Go', 'CLI', 'npm', 'YAML', 'JSON', 'Concurrency', 'OS Registry'],
+    color: '#4ade80',
+  },
+  {
+    op:    '04',
+    title: 'HELPNEST',
+    status:'DEPLOYED',
+    desc:  'Open-source AI-first customer support platform with a conversational AI agent that answers from a knowledge base via vector search, citing sources and escalating uncertain questions to a human inbox.',
+    stack: ['Next.js', 'PostgreSQL', 'Turborepo', 'Anthropic', 'OpenAI', 'Gemini', 'Mistral', 'Qdrant'],
+    color: '#a855f7',
   },
 ];
 
-// --- INTERNAL COMPONENT: SPOTLIGHT CARD ---
-const SpotlightCard = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => {
-  const divRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [opacity, setOpacity] = useState(0);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!divRef.current) return;
-    const rect = divRef.current.getBoundingClientRect();
-    setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-  };
-
-  const handleFocus = () => {
-    setOpacity(1);
-  };
-
-  const handleBlur = () => {
-    setOpacity(0);
-  };
-
-  return (
-    <div
-      ref={divRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={handleFocus}
-      onMouseLeave={handleBlur}
-      className={cn(
-        // Base styles
-        "relative h-full w-full overflow-hidden rounded-3xl border p-8 transition-colors group",
-        // Light Mode: Semi-transparent white with backdrop blur (frosted glass)
-        "border-[rgba(119,119,119,0.2)] bg-[rgba(255,255,255,0.15)] backdrop-blur-sm hover:border-[rgba(217,179,38,0.35)]",
-        // Dark Mode: White/10 border, white/5 bg, white spotlight
-        "dark:border-white/10 dark:bg-white/5 dark:hover:border-[rgba(217,179,38,0.35)]",
-        // CSS Variable for spotlight color (Light = black/5%, Dark = white/6%)
-        "[--spotlight-color:rgba(0,0,0,0.05)] dark:[--spotlight-color:rgba(255,255,255,0.06)]",
-        className
-      )}
-    >
-      <div
-        className="pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300"
+// ── Corner bracket component ──────────────────────────────────────────────────
+const Corners = ({ size = 14, color = 'rgba(0,212,255,0.35)', hoverColor = '' }: { size?: number; color?: string; hoverColor?: string }) => (
+  <>
+    {(['tl','tr','bl','br'] as const).map(pos => (
+      <span
+        key={pos}
+        className="absolute pointer-events-none transition-all duration-300"
         style={{
-          opacity,
-          background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, var(--spotlight-color), transparent 40%)`,
+          width: size, height: size,
+          top:    pos.includes('t') ? 0 : undefined,
+          bottom: pos.includes('b') ? 0 : undefined,
+          left:   pos.includes('l') ? 0 : undefined,
+          right:  pos.includes('r') ? 0 : undefined,
+          borderTop:    pos.includes('t') ? `1.5px solid ${color}` : undefined,
+          borderBottom: pos.includes('b') ? `1.5px solid ${color}` : undefined,
+          borderLeft:   pos.includes('l') ? `1.5px solid ${color}` : undefined,
+          borderRight:  pos.includes('r') ? `1.5px solid ${color}` : undefined,
         }}
       />
-      <div className="relative z-10">{children}</div>
-    </div>
+    ))}
+  </>
+);
+
+// ── Project card ──────────────────────────────────────────────────────────────
+const GLITCH_CHARS = '!<>-_\\/[]{}—=+*^?#ØΦΨ@$%';
+
+const ProjectCard = ({ project, index }: { project: typeof PROJECTS[number]; index: number }) => {
+  const ref    = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-50px' });
+  const [hovered, setHovered] = useState(false);
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [glitchTitle, setGlitchTitle] = useState('');
+
+  const onMouseMove = useCallback((e: React.MouseEvent) => {
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    setMousePos({ x, y });
+    setTilt({
+      x: ((y - rect.height / 2) / rect.height) * -5,
+      y: ((x - rect.width / 2) / rect.width) * 5,
+    });
+  }, []);
+
+  const onEnter = useCallback(() => {
+    setHovered(true);
+    // Glitch scramble
+    let iter = 0;
+    const id = setInterval(() => {
+      setGlitchTitle(
+        project.title.split('').map((c, i) =>
+          i < iter ? project.title[i] : GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)]
+        ).join('')
+      );
+      iter++;
+      if (iter > project.title.length) { clearInterval(id); setGlitchTitle(''); }
+    }, 40);
+  }, [project.title]);
+
+  const onLeave = useCallback(() => {
+    setHovered(false);
+    setTilt({ x: 0, y: 0 });
+    setGlitchTitle('');
+  }, []);
+
+  return (
+    <motion.div
+      ref={ref}
+      className="relative p-6 cursor-default"
+      style={{
+        background: isDark
+          ? (hovered ? 'rgba(6,14,24,0.95)' : 'rgba(5,12,20,0.82)')
+          : (hovered ? 'rgba(228,244,253,0.98)' : 'rgba(238,247,253,0.95)'),
+        border: `1px solid ${hovered ? project.color + '50' : (isDark ? 'rgba(0,212,255,0.14)' : 'rgba(0,119,170,0.18)')}`,
+        backdropFilter:'blur(12px)',
+        transition:    'border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease, transform 0.15s ease-out',
+        boxShadow:     hovered ? `0 0 30px ${project.color}15, inset 0 0 30px ${project.color}04` : 'none',
+        transform:     `perspective(600px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+      }}
+      initial={{ opacity: 0, y: 80, scale: 0.94, filter: 'blur(8px)' }}
+      animate={inView ? { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' } : {}}
+      transition={{ type: 'spring', stiffness: 65, damping: 20, delay: index * 0.13 }}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      onMouseMove={onMouseMove}
+    >
+      {/* Mouse spotlight */}
+      {hovered && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `radial-gradient(300px circle at ${mousePos.x}px ${mousePos.y}px, ${project.color}12, transparent 60%)`,
+          }}
+        />
+      )}
+      <Corners
+        size={hovered ? 18 : 12}
+        color={hovered ? project.color + '80' : 'rgba(0,212,255,0.3)'}
+      />
+
+      {/* Header */}
+      <div className="flex items-start justify-between mb-5">
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-[9px] tracking-widest text-[#8ba9b8]/35">OP:{project.op}</span>
+          <span className="h-px w-5" style={{ background: `rgba(0,212,255,0.3)` }} />
+          <h3
+            className="font-mono font-bold tracking-[0.1em] text-sm transition-colors duration-300"
+            style={{ color: hovered ? project.color : (isDark ? '#cce8f4' : '#0d2235') }}
+          >
+            {glitchTitle || project.title}
+          </h3>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span
+            className="w-1.5 h-1.5 rounded-full"
+            style={{ background: project.color, boxShadow: `0 0 6px ${project.color}` }}
+          />
+          <span
+            className="font-mono text-[8px] tracking-[0.2em]"
+            style={{ color: project.color + 'aa' }}
+          >
+            {project.status}
+          </span>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div
+        className="h-px mb-5 transition-all duration-500"
+        style={{
+          background: hovered
+            ? `linear-gradient(to right, ${project.color}60, transparent)`
+            : 'linear-gradient(to right, rgba(0,212,255,0.2), transparent)',
+        }}
+      />
+
+      {/* Description */}
+      <p className="text-[#8ba9b8]/70 text-sm leading-relaxed mb-6 min-h-[4.5rem]">
+        {project.desc}
+      </p>
+
+      {/* Tech stack */}
+      <div className="flex flex-wrap gap-1.5">
+        {project.stack.map(tech => (
+          <span
+            key={tech}
+            className="font-mono text-[10px] tracking-[0.08em] px-2 py-0.5 transition-all duration-300"
+            style={{
+              border:  `1px solid ${hovered ? project.color + '35' : 'rgba(0,212,255,0.14)'}`,
+              color:   hovered ? project.color + 'cc' : '#8ba9b8',
+              background: hovered ? `${project.color}06` : 'rgba(0,212,255,0.03)',
+            }}
+          >
+            {tech}
+          </span>
+        ))}
+      </div>
+    </motion.div>
   );
 };
 
-// --- MAIN COMPONENT ---
+// ── Main component ─────────────────────────────────────────────────────────────
 const Projects = () => {
+  const titleRef   = useRef<HTMLDivElement>(null);
+  const titleInView = useInView(titleRef, { once: true });
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   return (
-    <section id="projects" className="relative py-32 px-6 overflow-hidden text-foreground transition-colors duration-300">
+    <section id="projects" className="relative py-28 px-6">
       <div className="max-w-7xl mx-auto">
-        
-        {/* Section Header */}
-        <MagneticReveal className="mb-24 text-center md:text-left">
-           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-secondary/50 backdrop-blur-sm mb-6 dark:border-white/10 dark:bg-white/5">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"/>
-            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Selected Work</span>
-          </div>
 
-          <h2 className="headline-lg mt-2 uppercase leading-[0.85] tracking-tighter text-foreground">
-            Project <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-foreground to-foreground/40">
-              Archive.
+        {/* Header */}
+        <div ref={titleRef} className="mb-16">
+          <motion.div
+            className="wd-badge mb-5 inline-flex"
+            initial={{ opacity: 0, x: -40, filter: 'blur(6px)' }}
+            animate={titleInView ? { opacity: 1, x: 0, filter: 'blur(0px)' } : {}}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-[#00d4ff] animate-pulse" />
+            ACTIVE OPERATIONS
+          </motion.div>
+
+          <motion.h2
+            className="font-black uppercase text-[#cce8f4]"
+            style={{ fontSize: 'clamp(2.5rem,7vw,5rem)', letterSpacing: '-0.02em', lineHeight: 0.88 }}
+            initial={{ opacity: 0, y: 70, filter: 'blur(12px)' }}
+            animate={titleInView ? { opacity: 1, y: 0, filter: 'blur(0px)' } : {}}
+            transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1], delay: 0.08 }}
+          >
+            PROJECT{' '}
+            <span style={{ color: isDark ? '#00d4ff' : '#0099c8', textShadow: isDark ? '0 0 30px rgba(0,212,255,0.4)' : 'none' }}>
+              ARCHIVE.
             </span>
-          </h2>
-        </MagneticReveal>
+          </motion.h2>
 
-        {/* Project Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project, index) => (
-            <MagneticReveal key={project.title} delay={index * 0.1} className="h-full">
-              <SpotlightCard>
-                
-                {/* TOP SECTION (Icon, Title, Desc) 
-                  h-[17rem]: Tightened height. 
-                  Fits "SmartHomes" perfectly while keeping all borders aligned.
-                */}
-                <div className="flex flex-col h-[17rem]">
-                  {/* Icon Header */}
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="p-3 rounded-full bg-secondary/50 border border-border text-muted-foreground group-hover:text-foreground group-hover:border-foreground/20 transition-colors dark:bg-white/5 dark:border-white/10 dark:group-hover:text-white dark:group-hover:border-white/20">
-                      <Layers className="w-6 h-6" />
-                    </div>
-                  </div>
+          <motion.p
+            className="mt-5 font-mono text-[10px] tracking-[0.2em] text-[#8ba9b8]/40 max-w-md"
+            initial={{ opacity: 0, y: 20, filter: 'blur(4px)' }}
+            animate={titleInView ? { opacity: 1, y: 0, filter: 'blur(0px)' } : {}}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+          >
+            CLASSIFIED — HOVER TO REVEAL DETAILS · {PROJECTS.length} OPERATIONS ON RECORD
+          </motion.p>
+        </div>
 
-                  {/* Content */}
-                  <div>
-                    <h3 className="text-2xl font-semibold mb-3 text-foreground transition-colors duration-300">
-                      {project.title}
-                    </h3>
-                    {/* Removed mb-6 so text sits closer to the line below */}
-                    <p className="text-muted-foreground/80 leading-relaxed">
-                      {project.description}
-                    </p>
-                  </div>
-                </div>
-
-                {/* BOTTOM SECTION (Tech Stack)
-                   Sits immediately below the top section border.
-                */}
-                <div className="pt-6 border-t border-border dark:border-white/10">
-                  <div className="flex flex-wrap gap-2">
-                    {project.tech.map((tech) => (
-                      <span 
-                        key={tech} 
-                        className="text-xs font-medium px-2.5 py-1 rounded-full bg-secondary/40 border border-border text-muted-foreground dark:bg-white/5 dark:border-white/5"
-                      >
-                        {tech}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-              </SpotlightCard>
-            </MagneticReveal>
+        {/* Project grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {PROJECTS.map((project, index) => (
+            <ProjectCard key={project.op} project={project} index={index} />
           ))}
         </div>
-        
+
+        {/* Bottom status bar */}
+        <motion.div
+          className="mt-10 flex items-center justify-between"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
+          <div className="flex items-center gap-3">
+            <span className="h-px w-16 bg-gradient-to-r from-[rgba(0,212,255,0.4)] to-transparent" />
+            <span className="font-mono text-[9px] tracking-widest text-[#8ba9b8]/30">
+              ALL SYSTEMS OPERATIONAL
+            </span>
+          </div>
+          <span className="font-mono text-[9px] tracking-widest text-[#4ade80]/40">
+            ● {PROJECTS.length}/{PROJECTS.length} DEPLOYED
+          </span>
+        </motion.div>
+
       </div>
     </section>
   );
