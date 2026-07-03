@@ -1,280 +1,211 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
-import { motion, useInView } from 'framer-motion';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useRef, useState, useCallback } from 'react';
+import { motion, useScroll, useTransform, type MotionValue } from 'framer-motion';
+import { Github } from 'lucide-react';
+import SectionHeader from '@/components/SectionHeader';
+import { Chars, FadeUp } from '@/lib/anim';
 
-// ── Data ──────────────────────────────────────────────────────────────────────
+/* ── Data ─────────────────────────────────────────────────────────────────── */
 const PROJECTS = [
   {
-    op:    '01',
-    title: 'SMARTHOMES',
-    status:'DEPLOYED',
-    desc:  'Scalable e-commerce platform with AI-powered shopping assistant and real-time support. Features intelligent search via ElasticSearch, containerized microservices, and OpenAI assistant integration.',
+    idx: '01',
+    title: 'SmartHomes',
+    status: 'Deployed',
+    desc: 'Scalable e-commerce platform with an AI-powered shopping assistant and real-time support. Intelligent search via ElasticSearch, containerized microservices, and OpenAI assistant integration.',
     stack: ['React', 'Java Servlets', 'MySQL', 'MongoDB', 'ElasticSearch', 'Docker', 'OpenAI'],
-    color: '#00d4ff',
+    hue: '#FF4D1C',
   },
   {
-    op:    '02',
-    title: 'MEDIABRIDGE',
-    status:'DEPLOYED',
-    desc:  'Two-node Android media sync app using peer-to-peer transfers with SHA-256 deduplication, chunked resumable uploads, automatic device discovery, and Google Photos as the final sync destination.',
+    idx: '02',
+    title: 'MediaBridge',
+    status: 'Deployed',
+    desc: 'Two-node Android media sync app using peer-to-peer transfers with SHA-256 deduplication, chunked resumable uploads, automatic device discovery, and Google Photos as the final sync destination.',
     stack: ['Kotlin', 'Jetpack Compose', 'Ktor', 'P2P', 'SHA-256'],
-    color: '#ff6a00',
+    hue: '#5AC8FA',
   },
   {
-    op:    '03',
-    title: 'STACKGET',
-    status:'DEPLOYED',
-    desc:  'Cross-platform Go CLI tool available on npm that scans a developer\'s machine to detect all installed tools and versions. Features native OS registry/GUI app discovery, concurrent execution, and YAML/JSON environment snapshots with drift-checking.',
-    stack: ['Go', 'CLI', 'npm', 'YAML', 'JSON', 'Concurrency', 'OS Registry'],
-    color: '#4ade80',
+    idx: '03',
+    title: 'StackGet',
+    status: 'Deployed',
+    desc: 'Cross-platform Go CLI on npm that scans a developer\'s machine to detect installed tools and versions. Native OS registry discovery, concurrent execution, and YAML/JSON environment snapshots with drift-checking.',
+    stack: ['Go', 'CLI', 'npm', 'YAML', 'Concurrency', 'OS Registry'],
+    hue: '#7BE06B',
   },
   {
-    op:    '04',
-    title: 'HELPNEST',
-    status:'DEPLOYED',
-    desc:  'Open-source AI-first customer support platform with a conversational AI agent that answers from a knowledge base via vector search, citing sources and escalating uncertain questions to a human inbox.',
-    stack: ['Next.js', 'PostgreSQL', 'Turborepo', 'Anthropic', 'OpenAI', 'Gemini', 'Mistral', 'Qdrant'],
-    color: '#a855f7',
+    idx: '04',
+    title: 'HelpNest',
+    status: 'Deployed',
+    desc: 'Open-source AI-first customer support platform: a conversational agent answers from a knowledge base via vector search, cites its sources, and escalates uncertain questions to a human inbox.',
+    stack: ['Next.js', 'PostgreSQL', 'Turborepo', 'Anthropic', 'OpenAI', 'Qdrant'],
+    hue: '#C79BFF',
   },
 ];
 
-// ── Corner bracket component ──────────────────────────────────────────────────
-const Corners = ({ size = 14, color = 'rgba(0,212,255,0.35)', hoverColor = '' }: { size?: number; color?: string; hoverColor?: string }) => (
-  <>
-    {(['tl','tr','bl','br'] as const).map(pos => (
-      <span
-        key={pos}
-        className="absolute pointer-events-none transition-all duration-300"
-        style={{
-          width: size, height: size,
-          top:    pos.includes('t') ? 0 : undefined,
-          bottom: pos.includes('b') ? 0 : undefined,
-          left:   pos.includes('l') ? 0 : undefined,
-          right:  pos.includes('r') ? 0 : undefined,
-          borderTop:    pos.includes('t') ? `1.5px solid ${color}` : undefined,
-          borderBottom: pos.includes('b') ? `1.5px solid ${color}` : undefined,
-          borderLeft:   pos.includes('l') ? `1.5px solid ${color}` : undefined,
-          borderRight:  pos.includes('r') ? `1.5px solid ${color}` : undefined,
-        }}
-      />
-    ))}
-  </>
-);
+/* ── Sticky stacking card ─────────────────────────────────────────────────── */
+const ProjectCard = ({
+  project,
+  index,
+  total,
+  progress,
+}: {
+  project: typeof PROJECTS[number];
+  index: number;
+  total: number;
+  progress: MotionValue<number>;
+}) => {
+  // As later cards arrive, earlier ones recede: scale down + dim slightly.
+  const targetScale = 1 - (total - 1 - index) * 0.045;
+  const scale = useTransform(progress, [index / total, 1], [1, targetScale]);
 
-// ── Project card ──────────────────────────────────────────────────────────────
-const GLITCH_CHARS = '!<>-_\\/[]{}—=+*^?#ØΦΨ@$%';
+  // Ghost number drifts against the card's own scroll for inner parallax.
+  const articleRef = useRef<HTMLElement>(null);
+  const { scrollYProgress: cardProgress } = useScroll({
+    target: articleRef,
+    offset: ['start end', 'end start'],
+  });
+  const ghostY      = useTransform(cardProgress, [0, 1], [90, -90]);
+  const ghostRotate = useTransform(cardProgress, [0, 1], [4, -4]);
 
-const ProjectCard = ({ project, index }: { project: typeof PROJECTS[number]; index: number }) => {
-  const ref    = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-50px' });
-  const [hovered, setHovered] = useState(false);
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const [glitchTitle, setGlitchTitle] = useState('');
-
-  const onMouseMove = useCallback((e: React.MouseEvent) => {
-    const rect = ref.current?.getBoundingClientRect();
+  // Hue spotlight follows the pointer.
+  const [spot, setSpot] = useState({ x: -999, y: -999, on: false });
+  const onMove = useCallback((e: React.MouseEvent) => {
+    const rect = articleRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    setMousePos({ x, y });
-    setTilt({
-      x: ((y - rect.height / 2) / rect.height) * -5,
-      y: ((x - rect.width / 2) / rect.width) * 5,
-    });
-  }, []);
-
-  const onEnter = useCallback(() => {
-    setHovered(true);
-    // Glitch scramble
-    let iter = 0;
-    const id = setInterval(() => {
-      setGlitchTitle(
-        project.title.split('').map((c, i) =>
-          i < iter ? project.title[i] : GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)]
-        ).join('')
-      );
-      iter++;
-      if (iter > project.title.length) { clearInterval(id); setGlitchTitle(''); }
-    }, 40);
-  }, [project.title]);
-
-  const onLeave = useCallback(() => {
-    setHovered(false);
-    setTilt({ x: 0, y: 0 });
-    setGlitchTitle('');
+    setSpot({ x: e.clientX - rect.left, y: e.clientY - rect.top, on: true });
   }, []);
 
   return (
-    <motion.div
-      ref={ref}
-      className="relative p-6 cursor-default"
-      style={{
-        background: isDark
-          ? (hovered ? 'rgba(6,14,24,0.95)' : 'rgba(5,12,20,0.82)')
-          : (hovered ? 'rgba(228,244,253,0.98)' : 'rgba(238,247,253,0.95)'),
-        border: `1px solid ${hovered ? project.color + '50' : (isDark ? 'rgba(0,212,255,0.14)' : 'rgba(0,119,170,0.18)')}`,
-        backdropFilter:'blur(12px)',
-        transition:    'border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease, transform 0.15s ease-out',
-        boxShadow:     hovered ? `0 0 30px ${project.color}15, inset 0 0 30px ${project.color}04` : 'none',
-        transform:     `perspective(600px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-      }}
-      initial={{ opacity: 0, y: 80, scale: 0.94, filter: 'blur(8px)' }}
-      animate={inView ? { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' } : {}}
-      transition={{ type: 'spring', stiffness: 65, damping: 20, delay: index * 0.13 }}
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
-      onMouseMove={onMouseMove}
+    <div
+      className="sticky flex items-start justify-center"
+      style={{ top: `calc(10vh + ${index * 22}px)` }}
     >
-      {/* Mouse spotlight */}
-      {hovered && (
+      <motion.article
+        ref={articleRef}
+        className="relative w-full overflow-hidden rounded-3xl border border-line bg-surface origin-top"
+        style={{ scale }}
+        onMouseMove={onMove}
+        onMouseLeave={() => setSpot(s => ({ ...s, on: false }))}
+        aria-label={`Project: ${project.title}`}
+      >
+        {/* Hue wash + pointer spotlight + ghost number */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: `radial-gradient(300px circle at ${mousePos.x}px ${mousePos.y}px, ${project.color}12, transparent 60%)`,
+            background: `radial-gradient(120% 100% at 85% -10%, ${project.hue}14 0%, transparent 55%)`,
           }}
         />
-      )}
-      <Corners
-        size={hovered ? 18 : 12}
-        color={hovered ? project.color + '80' : 'rgba(0,212,255,0.3)'}
-      />
+        <div
+          className="absolute inset-0 pointer-events-none transition-opacity duration-500"
+          style={{
+            opacity: spot.on ? 1 : 0,
+            background: `radial-gradient(420px circle at ${spot.x}px ${spot.y}px, ${project.hue}1E 0%, transparent 65%)`,
+          }}
+        />
+        <motion.span
+          className="display absolute -right-4 -bottom-10 md:-bottom-16 select-none pointer-events-none leading-none"
+          style={{
+            fontSize: 'clamp(9rem, 24vw, 22rem)',
+            color: 'transparent',
+            WebkitTextStroke: `1px ${project.hue}45`,
+            y: ghostY,
+            rotate: ghostRotate,
+          }}
+          aria-hidden="true"
+        >
+          {project.idx}
+        </motion.span>
 
-      {/* Header */}
-      <div className="flex items-start justify-between mb-5">
-        <div className="flex items-center gap-3">
-          <span className="font-mono text-[9px] tracking-widest text-[#8ba9b8]/35">OP:{project.op}</span>
-          <span className="h-px w-5" style={{ background: `rgba(0,212,255,0.3)` }} />
+        <div className="relative p-7 md:p-14 min-h-[62vh] md:min-h-[68vh] flex flex-col">
+          {/* Header row */}
+          <div className="flex items-center justify-between mb-10 md:mb-14">
+            <span className="font-mono text-xs" style={{ color: project.hue }}>
+              {project.idx} / {String(PROJECTS.length).padStart(2, '0')}
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-line px-3.5 py-1.5">
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: project.hue, animation: 'pulse-dot 2.4s ease-in-out infinite' }}
+              />
+              <span className="label-mono !text-ink/70">{project.status}</span>
+            </span>
+          </div>
+
+          {/* Title */}
           <h3
-            className="font-mono font-bold tracking-[0.1em] text-sm transition-colors duration-300"
-            style={{ color: hovered ? project.color : (isDark ? '#cce8f4' : '#0d2235') }}
+            className="display text-ink mb-6 md:mb-8 whitespace-nowrap text-[min(5.7vw,2.4rem)] md:text-[clamp(2.4rem,7vw,5.5rem)]"
+            data-cursor="hover"
           >
-            {glitchTitle || project.title}
+            <Chars text={project.title} interactive stagger={0.04} />
           </h3>
+
+          {/* Description */}
+          <p className="text-inkmuted text-base md:text-lg leading-relaxed max-w-xl mb-auto">
+            {project.desc}
+          </p>
+
+          {/* Stack chips */}
+          <div className="mt-10 pt-8 hairline-t flex flex-wrap items-center gap-2.5">
+            <span className="label-mono mr-3">Stack</span>
+            {project.stack.map(tech => (
+              <span key={tech} className="chip !py-1.5 !px-3.5 !text-[0.78rem]">
+                {tech}
+              </span>
+            ))}
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ background: project.color, boxShadow: `0 0 6px ${project.color}` }}
-          />
-          <span
-            className="font-mono text-[8px] tracking-[0.2em]"
-            style={{ color: project.color + 'aa' }}
-          >
-            {project.status}
-          </span>
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div
-        className="h-px mb-5 transition-all duration-500"
-        style={{
-          background: hovered
-            ? `linear-gradient(to right, ${project.color}60, transparent)`
-            : 'linear-gradient(to right, rgba(0,212,255,0.2), transparent)',
-        }}
-      />
-
-      {/* Description */}
-      <p className="text-[#8ba9b8]/70 text-sm leading-relaxed mb-6 min-h-[4.5rem]">
-        {project.desc}
-      </p>
-
-      {/* Tech stack */}
-      <div className="flex flex-wrap gap-1.5">
-        {project.stack.map(tech => (
-          <span
-            key={tech}
-            className="font-mono text-[10px] tracking-[0.08em] px-2 py-0.5 transition-all duration-300"
-            style={{
-              border:  `1px solid ${hovered ? project.color + '35' : 'rgba(0,212,255,0.14)'}`,
-              color:   hovered ? project.color + 'cc' : '#8ba9b8',
-              background: hovered ? `${project.color}06` : 'rgba(0,212,255,0.03)',
-            }}
-          >
-            {tech}
-          </span>
-        ))}
-      </div>
-    </motion.div>
+      </motion.article>
+    </div>
   );
 };
 
-// ── Main component ─────────────────────────────────────────────────────────────
+/* ── Main ─────────────────────────────────────────────────────────────────── */
 const Projects = () => {
-  const titleRef   = useRef<HTMLDivElement>(null);
-  const titleInView = useInView(titleRef, { once: true });
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const stackRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: stackRef,
+    offset: ['start start', 'end end'],
+  });
 
   return (
-    <section id="projects" className="relative py-28 px-6">
-      <div className="max-w-7xl mx-auto">
+    <section id="projects" className="relative px-6 md:px-12 pt-20 md:pt-28 pb-24 md:pb-32" aria-label="Projects">
+      <div className="max-w-[1400px] mx-auto">
+        <SectionHeader
+          index="02"
+          label="Works"
+          meta={`${PROJECTS.length} selected projects`}
+          titleLines={[
+            { text: 'SELECTED' },
+            { text: 'WORKS', outline: true },
+          ]}
+        />
 
-        {/* Header */}
-        <div ref={titleRef} className="mb-16">
-          <motion.div
-            className="wd-badge mb-5 inline-flex"
-            initial={{ opacity: 0, x: -40, filter: 'blur(6px)' }}
-            animate={titleInView ? { opacity: 1, x: 0, filter: 'blur(0px)' } : {}}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#00d4ff] animate-pulse" />
-            ACTIVE OPERATIONS
-          </motion.div>
-
-          <motion.h2
-            className="font-black uppercase text-[#cce8f4]"
-            style={{ fontSize: 'clamp(2.5rem,7vw,5rem)', letterSpacing: '-0.02em', lineHeight: 0.88 }}
-            initial={{ opacity: 0, y: 70, filter: 'blur(12px)' }}
-            animate={titleInView ? { opacity: 1, y: 0, filter: 'blur(0px)' } : {}}
-            transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1], delay: 0.08 }}
-          >
-            PROJECT{' '}
-            <span style={{ color: isDark ? '#00d4ff' : '#0099c8', textShadow: isDark ? '0 0 30px rgba(0,212,255,0.4)' : 'none' }}>
-              ARCHIVE.
-            </span>
-          </motion.h2>
-
-          <motion.p
-            className="mt-5 font-mono text-[10px] tracking-[0.2em] text-[#8ba9b8]/40 max-w-md"
-            initial={{ opacity: 0, y: 20, filter: 'blur(4px)' }}
-            animate={titleInView ? { opacity: 1, y: 0, filter: 'blur(0px)' } : {}}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-          >
-            CLASSIFIED — HOVER TO REVEAL DETAILS · {PROJECTS.length} OPERATIONS ON RECORD
-          </motion.p>
-        </div>
-
-        {/* Project grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {PROJECTS.map((project, index) => (
-            <ProjectCard key={project.op} project={project} index={index} />
+        {/* Sticky stack */}
+        <div ref={stackRef} className="space-y-10 md:space-y-16 pb-[8vh]">
+          {PROJECTS.map((project, i) => (
+            <ProjectCard
+              key={project.idx}
+              project={project}
+              index={i}
+              total={PROJECTS.length}
+              progress={scrollYProgress}
+            />
           ))}
         </div>
 
-        {/* Bottom status bar */}
-        <motion.div
-          className="mt-10 flex items-center justify-between"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-        >
-          <div className="flex items-center gap-3">
-            <span className="h-px w-16 bg-gradient-to-r from-[rgba(0,212,255,0.4)] to-transparent" />
-            <span className="font-mono text-[9px] tracking-widest text-[#8ba9b8]/30">
-              ALL SYSTEMS OPERATIONAL
-            </span>
-          </div>
-          <span className="font-mono text-[9px] tracking-widest text-[#4ade80]/40">
-            ● {PROJECTS.length}/{PROJECTS.length} DEPLOYED
+        {/* Footer link */}
+        <FadeUp className="mt-6 flex items-center justify-between">
+          <span className="label-mono">
+            {PROJECTS.length} / {PROJECTS.length} deployed · all systems operational
           </span>
-        </motion.div>
-
+          <a
+            href="https://github.com/sriram-ravichandran"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="link-sweep inline-flex items-center gap-2 text-sm font-medium uppercase tracking-wide text-ink"
+          >
+            <Github className="w-4 h-4" />
+            More on GitHub
+          </a>
+        </FadeUp>
       </div>
     </section>
   );

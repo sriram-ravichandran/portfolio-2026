@@ -1,40 +1,73 @@
-import { createContext, useContext, useState, useEffect, useLayoutEffect, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 
 type Theme = 'dark' | 'light';
+type Point = { x: number; y: number };
 
-interface ThemeContextValue {
-  theme: Theme;
-  toggleTheme: () => void;
-}
+const ThemeContext = createContext<{ theme: Theme; toggleTheme: (origin?: Point) => void }>({
+  theme: 'dark',
+  toggleTheme: () => {},
+});
 
-const ThemeContext = createContext<ThemeContextValue>({ theme: 'dark', toggleTheme: () => {} });
+/** Reads the class the inline <head> script already applied (no flash). */
+const getInitialTheme = (): Theme =>
+  typeof document !== 'undefined' && document.documentElement.classList.contains('light')
+    ? 'light'
+    : 'dark';
+
+const applyThemeClass = (theme: Theme) => {
+  const root = document.documentElement;
+  root.classList.toggle('light', theme === 'light');
+  root.classList.toggle('dark', theme === 'dark');
+};
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
-    try {
-      const saved = localStorage.getItem('ctos-theme');
-      return saved === 'light' ? 'light' : 'dark';
-    } catch {
-      return 'dark';
-    }
-  });
-
-  // useLayoutEffect fires sync after DOM mutations, before the browser paints —
-  // the class is applied before the user sees anything, so no flash of wrong theme.
-  useLayoutEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'light') {
-      root.classList.add('light');
-    } else {
-      root.classList.remove('light');
-    }
-  }, [theme]);
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
   useEffect(() => {
-    try { localStorage.setItem('ctos-theme', theme); } catch { /* storage unavailable */ }
+    applyThemeClass(theme);
+    try {
+      localStorage.setItem('theme', theme);
+    } catch { /* storage unavailable */ }
   }, [theme]);
 
-  const toggleTheme = () => setTheme(t => (t === 'dark' ? 'light' : 'dark'));
+  const toggleTheme = useCallback((origin?: Point) => {
+    const next: Theme = theme === 'dark' ? 'light' : 'dark';
+    const apply = () => {
+      applyThemeClass(next); // synchronous: the view-transition snapshot needs the new colors now
+      setTheme(next);
+    };
+
+    const doc = document as Document & {
+      startViewTransition?: (cb: () => void) => { ready: Promise<void> };
+    };
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!doc.startViewTransition || reduced) {
+      // Fallback: brief global color transitions
+      const root = document.documentElement;
+      root.classList.add('theme-anim');
+      window.setTimeout(() => root.classList.remove('theme-anim'), 650);
+      apply();
+      return;
+    }
+
+    // Circular reveal sweeping out from the toggle button
+    const x = origin?.x ?? window.innerWidth - 48;
+    const y = origin?.y ?? 40;
+    const r = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+
+    const vt = doc.startViewTransition(apply);
+    vt.ready.then(() => {
+      document.documentElement.animate(
+        { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] },
+        {
+          duration: 700,
+          easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+          pseudoElement: '::view-transition-new(root)',
+        }
+      );
+    });
+  }, [theme]);
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
