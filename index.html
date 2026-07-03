@@ -3,7 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0A0A09" />
+    <script>
+      try {
+        if (localStorage.getItem('theme') === 'light') {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+        }
+      } catch (e) {}
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     
     <!-- PRIMARY SEO -->
     <title>Sriram Ravichandran | Full-Stack Developer & AI Engineer</title>
@@ -18,14 +29,14 @@
     <meta property="og:description" content="Engineering intelligent agents, scalable systems, and cloud-native architectures." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://sriramravichandran.in/" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:image" content="https://sriramravichandran.in/og-image.png" />
 
     <!-- TWITTER -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@sriram" />
     <meta name="twitter:title" content="Sriram Ravichandran | Full-Stack Developer" />
     <meta name="twitter:description" content="Engineering intelligent agents, scalable systems, and cloud-native architectures." />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta name="twitter:image" content="https://sriramravichandran.in/og-image.png" />
 
     <!-- SCHEMA MARKUP (JSON-LD) -->
     <script type="application/ld+json">
@@ -56,8 +67,8 @@
         "description": "Full-Stack Developer specializing in scalable systems, distributed architectures, and RAG-powered AI agents."
       }
     </script>
-    <script type="module" crossorigin src="/assets/index-Cuk80Evp.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-XXCzwrOl.css">
+    <script type="module" crossorigin src="/assets/index-CNyIOiuy.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-KWUdjt60.css">
   </head>
 
   <body>
