@@ -65,7 +65,7 @@ const ContactCard = ({ time }: { time: string }) => {
         ref={ref}
         onMouseMove={onMove}
         onMouseLeave={onLeave}
-        className="relative rounded-3xl border border-line bg-surface p-8 md:p-11 overflow-hidden"
+        className="relative rounded-3xl border border-line bg-surface p-6 md:p-11 overflow-hidden"
         style={{ rotateX: rotX, rotateY: rotY }}
       >
         {/* Sheen following the pointer */}
@@ -90,7 +90,7 @@ const ContactCard = ({ time }: { time: string }) => {
           </div>
 
           {/* Identity */}
-          <p className="display text-ink mb-1.5" style={{ fontSize: 'clamp(1.45rem, 2.2vw, 2rem)' }}>
+          <p className="display text-ink mb-1.5 text-[min(5vw,2rem)] lg:text-[clamp(1.45rem,2.2vw,2rem)]">
             Sriram Ravichandran
           </p>
           <p className="label-mono mb-10 md:mb-14">Full-stack &amp; backend engineer</p>
@@ -105,7 +105,7 @@ const ContactCard = ({ time }: { time: string }) => {
               Say hello
             </span>
             <span className="flex items-center justify-between gap-3">
-              <span className="text-ink font-medium text-sm md:text-base truncate transition-colors duration-500 group-hover:text-white">
+              <span className="min-w-0 text-ink font-medium text-sm md:text-base truncate transition-colors duration-500 group-hover:text-white">
                 {EMAIL}
               </span>
               <ArrowUpRight className="w-5 h-5 shrink-0 text-signal transition-all duration-500 group-hover:text-white group-hover:rotate-45" />
@@ -113,7 +113,7 @@ const ContactCard = ({ time }: { time: string }) => {
           </a>
 
           {/* Footer row: socials + locale */}
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-2.5">
               {SOCIALS.map(s => (
                 <a
@@ -122,9 +122,9 @@ const ContactCard = ({ time }: { time: string }) => {
                   target={s.external ? '_blank' : undefined}
                   rel={s.external ? 'noopener noreferrer' : undefined}
                   aria-label={s.label}
-                  className="group/coin relative z-10 flex items-center justify-center w-14 h-14 rounded-full border border-line transition-all duration-300 ease-out-expo hover:bg-ink hover:border-ink hover:scale-110"
+                  className="group/coin relative z-10 flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full border border-line transition-all duration-300 ease-out-expo hover:bg-ink hover:border-ink hover:scale-110"
                 >
-                  <s.icon className="w-5 h-5 text-inkmuted transition-colors duration-300 group-hover/coin:text-canvas" />
+                  <s.icon className="w-4 h-4 md:w-5 md:h-5 text-inkmuted transition-colors duration-300 group-hover/coin:text-canvas" />
                 </a>
               ))}
             </div>
@@ -162,10 +162,10 @@ const Contact = () => {
 
         {/* Headline left · tilt card right — vertically centered in the viewport */}
         <div className="flex-1 grid lg:grid-cols-12 gap-14 lg:gap-16 items-center content-center pb-16 md:pb-20">
-          <div className="lg:col-span-7">
+          <div className="lg:col-span-7 min-w-0">
             {/* Justified type block — each line sized to fill the column */}
             <h2 className="display text-ink mb-8">
-              <span className="flex items-center gap-4 whitespace-nowrap" style={{ fontSize: 'clamp(1.9rem, 4.1vw, 4rem)' }}>
+              <span className="flex items-center gap-4 whitespace-nowrap text-[min(7vw,3.4rem)] lg:text-[min(4.1vw,4rem)]">
                 <Chars text="LET'S BUILD" interactive />
                 <motion.span
                   className="text-signal shrink-0 leading-none"
@@ -177,13 +177,10 @@ const Contact = () => {
                   ✦
                 </motion.span>
               </span>
-              <span className="block whitespace-nowrap text-outline" style={{ fontSize: 'clamp(2.2rem, 4.7vw, 4.6rem)' }}>
+              <span className="block whitespace-nowrap text-outline text-[min(8vw,3.9rem)] lg:text-[min(4.7vw,4.6rem)]">
                 <Chars text="SOMETHING" delay={0.1} interactive />
               </span>
-              <span
-                className="block whitespace-nowrap overflow-hidden py-[0.1em] -my-[0.06em]"
-                style={{ fontSize: 'clamp(2.9rem, 7vw, 6.8rem)' }}
-              >
+              <span className="block whitespace-nowrap overflow-hidden py-[0.1em] -my-[0.06em] text-[min(13vw,6.2rem)] lg:text-[min(7vw,6.8rem)]">
                 <Chars text="remarkable." delay={0.2} className="serif-accent text-signal" />
               </span>
             </h2>
@@ -207,7 +204,7 @@ const Contact = () => {
           </div>
 
           <motion.div
-            className="lg:col-span-5"
+            className="lg:col-span-5 min-w-0"
             initial={{ opacity: 0, y: 60, rotate: 3 }}
             whileInView={{ opacity: 1, y: 0, rotate: 0 }}
             viewport={{ once: true, margin: '-12% 0px' }}

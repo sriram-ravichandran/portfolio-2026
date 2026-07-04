@@ -13,6 +13,15 @@ import { EASE_IO } from '@/lib/anim';
 const easeInOut = (t: number) =>
   t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
+/* Exact-geometry star (same path as the favicon). A ✦ text glyph sits
+   off-center in its em box on some platforms (iPadOS), which turns into a
+   visible drift when scaled ~110×; SVG keeps the scale origin dead center. */
+const Star = () => (
+  <svg viewBox="0 0 64 64" width="1em" height="1em" fill="currentColor" className="block" aria-hidden="true">
+    <path d="M32 7 C34.6 24.4 39.6 29.4 57 32 C39.6 34.6 34.6 39.6 32 57 C29.4 39.6 24.4 34.6 7 32 C24.4 29.4 29.4 24.4 32 7 Z" />
+  </svg>
+);
+
 const Preloader = ({ onComplete }: { onComplete: () => void }) => {
   const [prog, setProg] = useState(0); // raw 0..1, unrounded
   const [stage, setStage] = useState<'loading' | 'zoom' | 'gone'>('loading');
@@ -68,7 +77,7 @@ const Preloader = ({ onComplete }: { onComplete: () => void }) => {
                   opacity: 0.35 + turn * 0.65,
                 }}
               >
-                ✦
+                <Star />
               </span>
             ) : (
               <motion.span
@@ -81,7 +90,7 @@ const Preloader = ({ onComplete }: { onComplete: () => void }) => {
                   setStage('gone');
                 }}
               >
-                ✦
+                <Star />
               </motion.span>
             )}
           </div>
