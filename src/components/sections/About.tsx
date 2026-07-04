@@ -236,7 +236,7 @@ const Arsenal = () => {
   });
 
   return (
-    <div ref={runwayRef} className="md:h-[112vh]">
+    <div ref={runwayRef} className="md:h-[128vh]">
       <div className="md:sticky md:top-[16vh]">
       <FadeUp className="flex items-baseline justify-between mb-8">
         <h3 className="label-mono !text-ink">Technical arsenal</h3>

@@ -53,7 +53,11 @@ const ProjectCard = ({
   progress: MotionValue<number>;
 }) => {
   // As later cards arrive, earlier ones recede: scale down + dim slightly.
-  const targetScale = 1 - (total - 1 - index) * 0.045;
+  // Desktop only — on mobile the cards aren't pinned (they flow normally,
+  // since differing card heights make a pinned deck eject them unevenly),
+  // so the recede would just shrink cards mid-scroll for no reason.
+  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+  const targetScale = isDesktop ? 1 - (total - 1 - index) * 0.045 : 1;
   const scale = useTransform(progress, [index / total, 1], [1, targetScale]);
 
   // Ghost number drifts against the card's own scroll for inner parallax.
@@ -75,7 +79,7 @@ const ProjectCard = ({
 
   return (
     <div
-      className="sticky flex items-start justify-center"
+      className="md:sticky flex items-start justify-center"
       style={{ top: `calc(10vh + ${index * 22}px)` }}
     >
       <motion.article
