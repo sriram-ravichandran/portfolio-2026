@@ -19,8 +19,8 @@ const Index = () => {
   const [booted, setBooted] = useState(false);
   useSmoothScroll();
 
-  const siteTitle       = 'Sriram Ravichandran | Full-Stack & Backend Engineer';
-  const siteDescription = 'Portfolio of Sriram Ravichandran — Full-Stack & Backend Engineer specializing in scalable systems, LLM-powered AI agents, and cloud-native applications.';
+  const siteTitle       = 'Sriram Ravichandran | Full-Stack & AI Engineer';
+  const siteDescription = 'Sriram Ravichandran — Full-Stack & AI Engineer in Chicago, building agentic systems end-to-end: RAG pipelines, multi-agent orchestration, knowledge graphs.';
   const siteUrl         = 'https://sriramravichandran.in';
   const siteImage       = 'https://sriramravichandran.in/og-image.png';
 
@@ -33,7 +33,7 @@ const Index = () => {
       'https://github.com/sriram-ravichandran',
       'https://linkedin.com/in/sriram-ravichandran',
     ],
-    jobTitle: 'Full-Stack & Backend Software Engineer',
+    jobTitle: 'Full-Stack & AI Engineer',
     alumniOf: [
       { '@type': 'CollegeOrUniversity', name: 'Illinois Institute of Technology' },
       { '@type': 'CollegeOrUniversity', name: 'Sri Eshwar College of Engineering' },

@@ -10,11 +10,11 @@ import { Chars, MaskLine, EASE_OUT } from '@/lib/anim';
 import Marquee from '@/components/Marquee';
 
 const KEYWORDS = [
-  'Scalable Systems',
-  'LLM-Powered Agents',
-  'Cloud-Native',
-  'Distributed Architectures',
+  'Agentic AI',
   'RAG Pipelines',
+  'Knowledge Graphs',
+  'Multi-Agent Orchestration',
+  'Scalable Systems',
   'M.S. CS — Illinois Tech',
 ];
 
@@ -134,7 +134,7 @@ const Hero = ({ booted }: { booted: boolean }) => {
             >
               Full-Stack{' '}
               <span className="serif-accent text-signal" style={{ fontSize: '1.2em' }}>&amp;</span>{' '}
-              Backend{' '}
+              AI{' '}
               <span className="serif-accent text-signal" style={{ fontSize: '1.12em' }}>
                 engineer
               </span>
@@ -147,8 +147,8 @@ const Hero = ({ booted }: { booted: boolean }) => {
             animate={booted ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.9, ease: EASE_OUT, delay: 1.25 }}
           >
-            I architect scalable systems, ship LLM-powered AI agents, and build
-            cloud-native applications that actually matter.
+            I ship production-grade agentic systems end-to-end — RAG pipelines,
+            multi-agent orchestration, and the infrastructure under them.
           </motion.p>
 
           <motion.div

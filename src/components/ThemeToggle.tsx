@@ -13,7 +13,11 @@ const ThemeToggle = ({ className = '' }: { className?: string }) => {
         const rect = e.currentTarget.getBoundingClientRect();
         toggleTheme({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
       }}
-      className={`relative flex items-center justify-center w-10 h-10 rounded-full border border-line overflow-hidden transition-colors duration-300 hover:border-signal ${className}`}
+      className={`relative flex items-center justify-center w-10 h-10 rounded-full border border-line overflow-hidden transition-colors duration-300 hover:border-signal touch-manipulation ${className}`}
+      // touch-manipulation drops the browser's double-tap-to-zoom wait, and the
+      // transparent tap highlight removes the grey box mobile paints over the
+      // button as the sweep starts — both read as lag on the switch.
+      style={{ WebkitTapHighlightColor: 'transparent' }}
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
       title={isDark ? 'Light mode' : 'Dark mode'}
     >

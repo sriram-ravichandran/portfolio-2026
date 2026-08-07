@@ -4,6 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Animatable theme tokens ─────────────────────────────────────────────────
+   Registering the palette triplets lets the browser interpolate them directly.
+   That matters for the theme switch: one transition on <html> then repaints the
+   whole page, instead of attaching a transition to every node in the document.
+   Unregistered (older browsers) these behave exactly as before — the at-rule is
+   simply ignored and the legacy path in ThemeContext takes over. */
+@property --canvas-rgb  { syntax: '<number>+'; inherits: true; initial-value: 10 10 9; }
+@property --surface-rgb { syntax: '<number>+'; inherits: true; initial-value: 19 19 17; }
+@property --ink-rgb     { syntax: '<number>+'; inherits: true; initial-value: 242 239 232; }
+@property --muted-rgb   { syntax: '<number>+'; inherits: true; initial-value: 152 148 138; }
+
 /* ── Ink & Signal tokens ─────────────────────────────────────────────────── */
 :root {
   /* RGB triplets so Tailwind opacity modifiers keep working */
@@ -57,19 +68,39 @@ html.light {
   --foreground:  30 10% 8%;
 }
 
-/* Smooth color morph while switching themes (fallback when the
-   View Transition API is unavailable — added briefly by ThemeContext) */
-html.theme-anim,
-html.theme-anim *,
-html.theme-anim *::before,
-html.theme-anim *::after {
+/* Smooth color morph while switching themes (fallback when the View Transition
+   API is unavailable — added briefly by ThemeContext).
+
+   Every colour on the page derives from the four triplets above, so animating
+   the triplets on <html> alone morphs the entire document. One transitioning
+   element, not thousands: no style-recalc storm, which is what made this path
+   stutter badly on phones. */
+html.theme-anim {
   transition:
-    background-color 0.55s ease,
-    color 0.55s ease,
-    border-color 0.55s ease,
-    fill 0.55s ease,
-    stroke 0.55s ease,
-    -webkit-text-stroke-color 0.55s ease !important;
+    --canvas-rgb  0.45s ease,
+    --surface-rgb 0.45s ease,
+    --ink-rgb     0.45s ease,
+    --muted-rgb   0.45s ease;
+}
+/* The tokens now carry the fade, so the body must not run a second one
+   underneath it — two overlapping fades read as a muddy lag on the tail. */
+html.theme-anim body { transition: none !important; }
+
+/* Legacy path — browsers without @property support, where the triplets can't
+   interpolate. Kept as the original blanket transition so those users still
+   get a fade rather than a hard snap. ThemeContext picks this class only when
+   CSS.registerProperty is missing. */
+html.theme-anim-legacy,
+html.theme-anim-legacy *,
+html.theme-anim-legacy *::before,
+html.theme-anim-legacy *::after {
+  transition:
+    background-color 0.45s ease,
+    color 0.45s ease,
+    border-color 0.45s ease,
+    fill 0.45s ease,
+    stroke 0.45s ease,
+    -webkit-text-stroke-color 0.45s ease !important;
 }
 
 /* Theme switch via View Transition API — a circle sweeps out from the toggle.
@@ -81,6 +112,30 @@ html.theme-anim *::after {
 }
 ::view-transition-old(root) { z-index: 1; }
 ::view-transition-new(root) { z-index: 9999; }
+
+/* ── Touch devices: park the ambience while the switch plays ─────────────────
+   Desktop has the headroom to run the grain loop, the marquees, the navbar's
+   backdrop blur AND a full-viewport clip-path sweep at once. A phone GPU does
+   not, so the sweep lands as a stutter. Parking these for the ~450ms the
+   switch takes hands the whole frame budget to the animation. Scoped to coarse
+   pointers so desktop rendering is untouched, and invisible at this duration.  */
+@media (hover: none), (pointer: coarse) {
+  html.theme-switching .grain-layer,
+  html.theme-switching .marquee-track {
+    animation-play-state: paused !important;
+  }
+
+  /* backdrop-filter is the single most expensive thing to re-composite inside
+     a view-transition snapshot; the navbar sits at 85% opacity anyway. */
+  html.theme-switching nav {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* The snapshot already carries the colour change — letting the live body
+     fade underneath it double-animates and smears the midpoint. */
+  html.theme-switching body { transition: none !important; }
+}
 
 /* ── Base ────────────────────────────────────────────────────────────────── */
 @layer base {

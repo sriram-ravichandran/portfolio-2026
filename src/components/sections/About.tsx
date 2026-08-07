@@ -7,36 +7,36 @@ import Magnetic from '@/components/Magnetic';
 
 /* ── Data ─────────────────────────────────────────────────────────────────── */
 const BIO =
-  'Full-Stack & Backend Engineer specializing in scalable systems, distributed architectures, and cloud-native applications — M.S. Computer Science at Illinois Institute of Technology, with experience across Zoho Corporation and NeuralSeek: from securing MDM infrastructure for 10,000+ devices to engineering RAG-powered AI agents.';
+  'Full-Stack & AI Engineer shipping production-grade agentic systems end-to-end — RAG pipelines, multi-agent orchestration, and knowledge graphs, from architecture through deployment. M.S. Computer Science at Illinois Institute of Technology, with experience across Zoho Corporation and NeuralSeek: from securing MDM infrastructure for 10,000+ devices to engineering RAG agents whose every answer traces back to a verifiable source.';
 
 const EXPERIENCE = [
   {
-    role: 'AI Agent Developer',
+    role: 'AI Agent Developer Intern',
     company: 'NeuralSeek',
     location: 'Miami, FL — Remote',
     period: 'Oct — Nov 2025',
-    desc: 'Engineered a RAG-powered AI agent with automated data lineage to guarantee verifiable citation accuracy and minimize model hallucinations. Optimized LLM response quality through advanced prompt engineering and ethical guardrails.',
+    desc: 'Built a Retrieval-Augmented Generation agent with automated data-lineage tracking, so every generated answer traced back to a verifiable source citation. Hardened it with prompt-level guardrails against unsafe and low-confidence responses, meeting the team\u2019s bar for production deployment.',
   },
   {
     role: 'Member Technical Staff',
     company: 'Zoho Corporation',
     location: 'Chennai, India',
     period: 'Jun — Jul 2023',
-    desc: 'Resolved high-priority support tickets, applying fixes across 10,000+ Apple devices, boosting system functionality. Collaborated with front-end developers on REST API integration.',
+    desc: 'Diagnosed and shipped fixes for high-severity production issues affecting a fleet of 10,000+ Apple devices, improving system stability. Owned REST API contracts consumed by front-end teams, resolving integration issues end-to-end.',
   },
   {
     role: 'Project Trainee',
     company: 'Zoho Corporation',
     location: 'Chennai, India',
     period: 'Aug 2022 — May 2023',
-    desc: 'Detected and resolved key glitches in the MDM system reducing policy violation cases by ~10%. Created product feature documentation reducing onboarding time for new developers.',
+    desc: 'Found and closed security gaps in the MDM system that let users bypass device restrictions, cutting policy-violation cases by ~10%. Wrote feature documentation adopted as onboarding material for new developers.',
   },
   {
     role: 'Summer Intern',
     company: 'Zoho Corporation',
     location: 'Chennai, India',
     period: 'May — Jun 2022',
-    desc: 'Acquired proficiency in backend development through hands-on work with production systems. Participated in code reviews and mentorship sessions.',
+    desc: 'Delivered backend features across multiple languages and frameworks, with code reviewed and merged into production codebases under senior engineer mentorship.',
   },
 ];
 
@@ -56,35 +56,39 @@ const EDUCATION = [
 ];
 
 const ACHIEVEMENTS = [
-  { title: 'Interizon Hackathon 2021', award: 'Winner',     date: 'Jan 2023'  },
-  { title: 'Freshathon Project Expo',  award: 'Jury Panel', date: 'June 2024' },
+  { title: 'Interizon Hackathon',     award: 'Winner',     date: 'Jan 2023'  },
+  { title: 'Freshathon Project Expo', award: 'Jury Panel', date: 'June 2024' },
 ];
 
 const SKILLS = [
   {
     cat: 'Languages',
-    skills: ['Python', 'Java', 'JavaScript (ES6+)', 'TypeScript', 'Go', 'Kotlin', 'C++', 'C', 'SQL', 'HTML5', 'CSS3'],
+    skills: ['Python', 'Java', 'TypeScript', 'JavaScript (ES6+)', 'Go (Golang)', 'Kotlin', 'C++', 'Rust', 'SQL'],
   },
   {
-    cat: 'Frameworks & AI Infra',
-    skills: ['LangGraph', 'LangChain', 'AutoGen', 'Multi-Agent Orchestration', 'Agentic AI', 'RAG Architecture', 'Prompt Engineering', 'LLM APIs (OpenAI, Claude)', 'React.js', 'Next.js', 'Node.js', 'FastAPI', 'RESTful APIs (Jersey, Ktor)', 'WebSockets', 'Java Servlets', 'Jetpack Compose'],
+    cat: 'AI & Agentic Systems',
+    skills: ['LangGraph', 'LangChain', 'LlamaIndex', 'AutoGen', 'Model Context Protocol (MCP)', 'Multi-Agent Orchestration', 'RAG Architecture', 'Prompt Engineering', 'Vector Embeddings', 'Hugging Face', 'Fine-Tuning (LoRA)', 'LLM Evaluation & Observability (LangSmith)', 'LLM APIs (OpenAI, Anthropic Claude, Gemini, Mistral)'],
   },
   {
-    cat: 'Databases & Vector Search',
-    skills: ['PostgreSQL', 'MySQL', 'MongoDB', 'ElasticSearch', 'Vector Databases', 'Vector Embeddings', 'Semantic Search', 'Graph Databases', 'Data Deduplication (SHA-256)'],
+    cat: 'Backend & Web',
+    skills: ['FastAPI', 'Node.js', 'Next.js', 'React.js', 'GraphQL', 'gRPC', 'RESTful APIs', 'WebSockets', 'Microservices Architecture', 'System Design', 'PDF Parsing'],
   },
   {
-    cat: 'Cloud, DevOps & Distributed Systems',
-    skills: ['AWS', 'Microsoft Azure', 'Docker', 'Kubernetes', 'Apache Kafka', 'Git', 'GitHub Actions', 'CI/CD', 'Linux', 'Microservices', 'System Design', 'P2P Systems', 'Embedded Servers'],
+    cat: 'Databases & Search',
+    skills: ['PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'ElasticSearch', 'Qdrant', 'Pinecone (Vector Search)', 'Neo4j (Graph Database)'],
+  },
+  {
+    cat: 'Cloud & DevOps',
+    skills: ['AWS', 'Docker', 'Kubernetes', 'Terraform (IaC)', 'Apache Kafka', 'MLOps', 'GitHub Actions', 'CI/CD', 'Linux'],
   },
   {
     cat: 'Engineering Practices',
-    skills: ['Agile/Scrum', 'Code Reviews', 'Unit & E2E Testing (Playwright)', 'Debugging & Troubleshooting'],
+    skills: ['Agile/Scrum', 'Code Reviews', 'Unit & E2E Testing (Playwright)', 'Debugging & Performance Troubleshooting'],
   },
 ];
 
 const RESUME_URL =
-  'https://docs.google.com/document/d/1iXWJzeLECENQXcnyOjwzMGs5a50ip8P5_9nnBsSOXLE/edit?usp=sharing';
+  'https://drive.google.com/file/d/1KCkhjmh1rAO-th2CxP3jQnzjNagiJWHS/view?usp=sharing';
 
 /* ── Scroll-scrubbed word reveal ──────────────────────────────────────────── */
 const ScrubWord = ({
