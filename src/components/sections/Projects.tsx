@@ -133,9 +133,17 @@ const ProjectCard = ({
             </span>
           </div>
 
-          {/* Title */}
+          {/* Title — <Chars> boxes every letter individually, which drops
+              kerning, so Syne caps run ~1.19em per character. Cap the size at
+              available width ÷ character count: short titles keep the full
+              display scale, long ones step down only as far as they need to. */}
           <h3
-            className="display text-ink mb-6 md:mb-8 whitespace-nowrap text-[min(5.7vw,2.4rem)] md:text-[clamp(2.4rem,7vw,5.5rem)]"
+            className="display text-ink mb-6 md:mb-8 whitespace-nowrap
+                       [--t-size:min(5.7vw,2.4rem)] [--t-room:calc(100vw_-_6.5rem)]
+                       md:[--t-size:clamp(2.4rem,7vw,5.5rem)] md:[--t-room:calc(min(100vw_-_6rem,1400px)_-_7rem)]"
+            style={{
+              fontSize: `min(var(--t-size), calc(var(--t-room) / ${(project.title.length * 1.19).toFixed(2)}))`,
+            }}
             data-cursor="hover"
           >
             <Chars text={project.title} interactive stagger={0.04} />
